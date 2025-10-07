@@ -5,6 +5,7 @@
 字符集：utf8mb4
 排序规则：utf8mb4_general_ci
 点击 "确定" 创建
+
 2.创建数据表：执行以下 SQL 语句
 -- 商品表
 CREATE TABLE product (
@@ -43,18 +44,25 @@ CREATE TABLE seller (
 
 -- 初始卖家数据（密码：password，已加密）
 INSERT INTO seller (username, password) 
-VALUES ('seller', '$2a$10$VJ8f2eTQ8Qj5y8QJZJZJ2e7QZJZJZJ2e7QZJZJZJ2e7QZJZJZJ2e');
+VALUES ('seller', '111111');
+
 3.打开src/main/resources/application.properties文件
 修改数据库配置为你的 MySQL 信息
+
 4.运行后端项目：右键点击 → "Run 'SimpleShopApplication'"
-5.在前端的终端里执行命令：npm install和
+
+5.在前端的终端里执行命令：
+进入simple-shop-frontend，在 Terminal 中执行命令：
+npm install
 npm install --save-dev eslint eslint-plugin-vue @babel/eslint-parser @babel/core @babel/preset-env
+
 6.运行前端项目：
-在 Terminal 中执行命令：npm run serve
+进入simple-shop-frontend，在 Terminal 中执行命令：npm run serve
+
 7.前端服务将运行在 http://localhost:8080
-访问系统：
+在浏览器中输入网址访问系统：
 买家页面：http://localhost:8080
 卖家登录页：http://localhost:8080/seller/login
 初始用户名：seller
-初始密码：password
+初始密码：111111
 

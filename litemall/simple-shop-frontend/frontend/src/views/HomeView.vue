@@ -1,41 +1,43 @@
 <template>
   <div class="home">
     <div v-if="loading" class="loading">加载中...</div>
-    
+
     <div v-if="error" class="alert alert-danger">
       {{ error }}
     </div>
-    
-    <div v-if="product && product.isActive" class="product-card card">
+
+    <!-- 只有当 product 存在，且 product.active === true 时，才显示商品卡片 -->
+    <div v-if="product && product.active" class="product-card card">
       <h1>{{ product.name }}</h1>
       <div class="product-image">
-        <img :src="product.imageUrl || 'https://picsum.photos/600/400'" 
-             :alt="product.name" 
-             class="product-img">
+
       </div>
       <div class="product-price">价格: ¥{{ product.price.toFixed(2) }}</div>
       <div class="product-description">
         <h3>商品描述</h3>
         <p>{{ product.description }}</p>
       </div>
-      
-      <div v-if="product.isFrozen" class="alert alert-danger">
+
+      <!-- 注意：这里用的是 product.frozen（后端返回的字段名），不是 isFrozen -->
+      <div v-if="product.frozen" class="alert alert-danger">
         该商品正在交易中，请稍后再试。
       </div>
-      
-      <button 
-        class="btn" 
-        @click="showBuyForm = true" 
-        v-if="!product.isFrozen">
+
+      <!-- 只有商品未冻结，才显示购买按钮 -->
+      <button
+        class="btn"
+        @click="showBuyForm = true"
+        v-if="!product.frozen">
         我要购买
       </button>
     </div>
-    
-    <div v-if="!product || !product.isActive" class="alert alert-danger">
+
+    <!-- 如果没有商品，或者商品不活跃（active === false），显示提示 -->
+    <div v-if="!product || !product.active" class="alert alert-danger">
       当前没有可购买的商品。
     </div>
-    
-    <!-- 购买表单 -->
+
+    <!-- 购买表单弹窗 -->
     <div v-if="showBuyForm && product" class="buy-form card">
       <h2>购买信息</h2>
       <form @submit.prevent="submitBuy">
@@ -61,7 +63,8 @@
         </div>
       </form>
     </div>
-    
+
+    <!-- 提交成功提示 -->
     <div v-if="buySuccess" class="alert alert-success">
       购买意向已提交，请等待卖家联系进行线下交易。
     </div>
@@ -73,11 +76,11 @@ export default {
   name: 'HomeView',
   data() {
     return {
-      product: null,
-      loading: true,
-      error: '',
-      showBuyForm: false,
-      buySuccess: false,
+      product: null,           // 当前活跃商品
+      loading: true,           // 加载状态
+      error: '',               // 错误信息
+      showBuyForm: false,      // 是否显示购买表单
+      buySuccess: false,       // 是否显示购买成功提示
       buyer: {
         name: '',
         phone: '',
@@ -87,9 +90,10 @@ export default {
     }
   },
   created() {
-    this.fetchActiveProduct()
+    this.fetchActiveProduct()  // 组件创建时获取活跃商品
   },
   methods: {
+    // 获取当前活跃商品（后端接口返回字段是 active，不是 isActive）
     async fetchActiveProduct() {
       try {
         this.loading = true
@@ -103,6 +107,8 @@ export default {
         this.loading = false
       }
     },
+
+    // 提交购买意向
     async submitBuy() {
       try {
         await this.$axios.post(`/buyers/product/${this.product.id}`, this.buyer)
@@ -110,7 +116,7 @@ export default {
         this.showBuyForm = false
         // 刷新商品状态
         this.fetchActiveProduct()
-        // 5秒后隐藏成功提示
+        // 5秒后自动隐藏成功提示
         setTimeout(() => {
           this.buySuccess = false
         }, 5000)
@@ -165,5 +171,72 @@ export default {
   text-align: center;
   padding: 2rem;
   font-size: 1.2rem;
+}
+
+.alert {
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 4px;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: #fff;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  background: #6c757d;
+}
+
+.btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.form-group textarea {
+  height: 80px;
+  resize: vertical;
 }
 </style>

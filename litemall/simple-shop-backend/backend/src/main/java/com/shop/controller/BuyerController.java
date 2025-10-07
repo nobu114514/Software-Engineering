@@ -28,7 +28,7 @@ public class BuyerController {
 
     @PutMapping("/{id}/complete")
     public ResponseEntity<Boolean> completeTransaction(
-            @PathVariable Long id, 
+            @PathVariable Long id,
             @RequestParam boolean success) {
         boolean result = buyerService.completeTransaction(id, success);
         return result ? ResponseEntity.ok(true) : ResponseEntity.notFound().build();

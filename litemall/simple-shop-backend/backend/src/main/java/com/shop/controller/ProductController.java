@@ -62,4 +62,15 @@ public class ProductController {
         boolean success = productService.deactivateProduct(id);
         return success ? ResponseEntity.ok(true) : ResponseEntity.notFound().build();
     }
+
+    // ✅ 新增：激活（上架）某个商品，并自动下架其他所有商品
+    @PutMapping("/{id}/activate")
+    public ResponseEntity<Product> activateProduct(@PathVariable Long id) {
+        try {
+            Product updated = productService.activateProductAndDeactivateOthers(id);
+            return ResponseEntity.ok(updated);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

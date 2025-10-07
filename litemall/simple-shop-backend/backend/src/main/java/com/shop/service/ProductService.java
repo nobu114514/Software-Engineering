@@ -25,7 +25,7 @@ public class ProductService {
 
     @Transactional
     public Product createProduct(Product product) {
-        // 先将所有现有商品设为不活跃
+        // 将任何现有的在售商品设为非活跃
         productRepository.findByIsActiveTrue().ifPresent(p -> {
             p.setActive(false);
             productRepository.save(p);
@@ -66,5 +66,27 @@ public class ProductService {
             return true;
         }
         return false;
+    }
+
+    // ✅ 新增方法：激活指定商品，并自动将其他商品设为非活跃
+    @Transactional
+    public Product activateProductAndDeactivateOthers(Long id) {
+        // 1. 将所有商品设为非活跃
+        List<Product> all = productRepository.findAll();
+        for (Product p : all) {
+            p.setActive(false);
+            productRepository.save(p);
+        }
+
+        // 2. 激活传入的商品
+        Optional<Product> productOpt = productRepository.findById(id);
+        if (productOpt.isPresent()) {
+            Product product = productOpt.get();
+            product.setActive(true);
+            product.setFrozen(false); // 可选，确保未被冻结
+            return productRepository.save(product);
+        } else {
+            throw new RuntimeException("商品不存在，ID: " + id);
+        }
     }
 }

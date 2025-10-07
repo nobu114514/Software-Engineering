@@ -12,7 +12,7 @@ public class WebConfig implements WebMvcConfigurer {
         // 允许所有/api/**路径的请求跨域访问
         registry.addMapping("/api/**")
                 // 允许前端的IP地址和端口访问（替换成你的前端实际地址）
-                .allowedOrigins("http://10.234.121.24:8080", "http://localhost:8080")
+                .allowedOrigins("http://10.234.47.159:8080", "http://localhost:8080")
                 // 允许的HTTP方法
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 // 允许的请求头

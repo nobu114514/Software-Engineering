@@ -47,6 +47,10 @@
     <div v-if="!loading && buyers.length === 0" class="alert alert-danger">
       暂无购买意向记录
     </div>
+    <br>
+    <a href="/seller/dashboard" class="btn btn-secondary" style="margin-bottom: 1rem;">
+      返回
+    </a>
   </div>
 </template>
 

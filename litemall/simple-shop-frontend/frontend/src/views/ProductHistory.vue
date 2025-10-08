@@ -2,6 +2,8 @@
   <div class="product-history">
     <h1>商品历史记录</h1>
 
+
+
     <div v-if="loading" class="loading">加载中...</div>
 
     <div v-if="error" class="alert alert-danger">
@@ -49,6 +51,10 @@
     <div v-if="!loading && products.length === 0" class="alert alert-danger">
       暂无商品记录
     </div>
+    <br>
+    <a href="/seller/dashboard" class="btn btn-secondary" style="margin-bottom: 1rem;">
+    返回
+    </a>
   </div>
 </template>
 

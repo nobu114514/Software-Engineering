@@ -7,6 +7,7 @@
       <a href="/seller/products" class="btn">商品历史</a>
       <a href="/seller/buyers" class="btn">购买意向列表</a>
       <a href="/seller/change-password" class="btn">修改密码</a>
+      <a href="/" class="btn">返回买家平台</a>
     </div>
     
     <div v-if="loading" class="loading">加载中...</div>

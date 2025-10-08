@@ -4,7 +4,7 @@
       <div class="navbar-container">
         <a href="/" class="navbar-logo">极简商店</a>
         <div class="navbar-menu">
-          <a href="/seller/login" v-if="!isSellerLoggedIn">卖家入口</a>
+          <a href="/seller/login" v-if="!isSellerLoggedIn">卖家登录</a>
           <a href="/seller/dashboard" v-if="isSellerLoggedIn">卖家后台</a>
           <button @click="logout" v-if="isSellerLoggedIn">退出登录</button>
         </div>

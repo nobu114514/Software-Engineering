@@ -19,14 +19,14 @@
       <h2>当前在售商品</h2>
       <h3>{{ activeProduct.name }}</h3>
       <p>价格: ¥{{ activeProduct.price.toFixed(2) }}</p>
-      <p>状态: {{ activeProduct.isFrozen ? '交易中（已冻结）' : '可购买' }}</p>
+      <p>状态: {{ activeProduct.frozen ? '交易中（已冻结）' : '可购买' }}</p>
       
       <div class="actions">
         <button 
           class="btn" 
           @click="toggleFreeze"
           :disabled="!activeProduct">
-          {{ activeProduct.isFrozen ? '解除冻结' : '冻结商品' }}
+          {{ activeProduct.frozen ? '解除冻结' : '冻结商品' }}
         </button>
         <a :href="'/seller/product/new?id=' + activeProduct.id" class="btn">编辑商品</a>
       </div>
@@ -67,12 +67,16 @@ export default {
     },
     async toggleFreeze() {
       if (!this.activeProduct) return
-      
+
       try {
+        // 修复：添加 /api 前缀 + 字段名改为 frozen
         await this.$axios.put(`/products/${this.activeProduct.id}/freeze`, null, {
-          params: { freeze: !this.activeProduct.isFrozen }
+          params: { freeze: !this.activeProduct.frozen }
         })
-        this.activeProduct.isFrozen = !this.activeProduct.isFrozen
+        // 修复：字段名改为 frozen
+        this.activeProduct.frozen = !this.activeProduct.frozen
+        // （可选优化）清空之前的错误提示
+        this.error = ''
       } catch (err) {
         this.error = '操作失败，请重试'
         console.error(err)

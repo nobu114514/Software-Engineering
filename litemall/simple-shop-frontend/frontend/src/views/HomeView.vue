@@ -10,7 +10,13 @@
     <div v-if="product && product.active" class="product-card card">
       <h1>{{ product.name }}</h1>
       <div class="product-image">
-
+        <!-- 显示商品图片，如果没有图片则显示默认图片 -->
+        <img
+          :src="product.imageUrl || 'https://picsum.photos/800/400?grayscale'"
+          :alt="product.name || '商品图片'"
+          class="product-img"
+          @error="handleImageError"
+        >
       </div>
       <div class="product-price">价格: ¥{{ product.price.toFixed(2) }}</div>
       <div class="product-description">
@@ -124,6 +130,12 @@ export default {
         this.error = '提交购买意向失败'
         console.error(err)
       }
+    },
+
+    // 处理图片加载失败的情况
+    handleImageError(e) {
+      // 如果图片加载失败，使用默认图片
+      e.target.src = 'https://picsum.photos/800/400?grayscale'
     }
   }
 }
@@ -137,12 +149,14 @@ export default {
 
 .product-image {
   margin: 1rem 0;
+  text-align: center; /* 图片居中显示 */
 }
 
 .product-img {
   max-width: 100%;
   height: auto;
   border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* 添加轻微阴影增强视觉效果 */
 }
 
 .product-price {
@@ -196,6 +210,7 @@ export default {
   border-radius: 8px;
   padding: 1.5rem;
   background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .btn {
@@ -205,10 +220,19 @@ export default {
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn:hover {
+  background: #0056b3;
 }
 
 .btn-secondary {
   background: #6c757d;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
 }
 
 .btn:disabled {

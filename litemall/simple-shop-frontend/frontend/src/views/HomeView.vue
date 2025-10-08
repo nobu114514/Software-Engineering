@@ -12,7 +12,7 @@
       <div class="product-image">
         <!-- 显示商品图片，如果没有图片则显示默认图片 -->
         <img
-          :src="product.imageUrl || 'https://picsum.photos/800/400?grayscale'"
+          :src="product.imageUrl || 'https://img.pngsucai.com/00/87/02/31a2f72e4e901438.webp'"
           :alt="product.name || '商品图片'"
           class="product-img"
           @error="handleImageError"
@@ -135,7 +135,7 @@ export default {
     // 处理图片加载失败的情况
     handleImageError(e) {
       // 如果图片加载失败，使用默认图片
-      e.target.src = 'https://picsum.photos/800/400?grayscale'
+      e.target.src = 'https://img.pngsucai.com/00/87/02/31a2f72e4e901438.webp'
     }
   }
 }

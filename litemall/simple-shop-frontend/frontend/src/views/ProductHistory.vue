@@ -8,6 +8,11 @@
             {{ error }}
         </div>
 
+        <!-- 提示信息：当前系统只允许一个商品在售 -->
+        <div class="alert alert-info" v-if="!loading && products.length > 0">
+            系统提示：当前仅允许一个商品处于在售状态，新商品上架时其他商品将自动下架
+        </div>
+
         <table v-if="!loading && products.length > 0" class="product-table">
             <thead>
             <tr>
@@ -25,9 +30,9 @@
                 <td>{{ product.name }}</td>
                 <td>¥{{ product.price.toFixed(2) }}</td>
                 <td>
-                    <span v-if="product.active">在售</span>
-                    <span v-else>已下架</span>
-                    <span v-if="product.frozen"> (已冻结)</span>
+                    <span v-if="product.active" class="status-active">在售</span>
+                    <span v-else class="status-inactive">已下架</span>
+                    <span v-if="product.frozen" class="status-frozen"> (已冻结)</span>
                 </td>
                 <td>{{ formatDate(product.createdAt) }}</td>
                 <td>
@@ -36,9 +41,10 @@
 
                     <!-- 上架 / 下架 按钮 -->
                     <button
-                            class="btn btn-secondary"
+                            class="btn"
+                            :class="{ 'btn-secondary': product.active, 'btn-success': !product.active }"
                             @click="toggleActive(product)"
-                            :disabled="product.active && products.filter(p => p.active).length <= 1">
+                            :disabled="product.active && getActiveProductsCount() <= 1">
                         {{ product.active ? '下架' : '上架' }}
                     </button>
                 </td>
@@ -69,7 +75,7 @@
         async fetchProducts() {
           try {
             this.loading = true
-            const response = await this.$axios.get('/products') // ✅ 实际请求：http://localhost:8081/api/products
+            const response = await this.$axios.get('/products') // 实际请求：http://localhost:8081/api/products
             this.products = response.data
             this.error = ''
           } catch (err) {
@@ -80,15 +86,39 @@
           }
         },
 
-        // ✅ 修改后的切换上架 / 下架逻辑
+        // 获取当前在售商品数量
+        getActiveProductsCount() {
+          return this.products.filter(p => p.isActive).length
+        },
+
         async toggleActive(product) {
           try {
             if (product.isActive) {
-              // 当前是“在售”，执行下架：调用后端 /deactivate 接口
+              // 当前是“在售”，执行下架
               await this.$axios.put(`/products/${product.id}/deactivate`)
             } else {
-              // 当前是“已下架”，执行上架：调用后端 /activate 接口
+              // 当前是“已下架”，执行上架
+              // 先检查是否有其他在售商品
+              const activeProducts = this.products.filter(p => p.isActive && p.id !== product.id)
+
+              // 先上架当前商品
               await this.$axios.put(`/products/${product.id}/activate`)
+
+              // 再将其他所有在售商品下架
+              if (activeProducts.length > 0) {
+                // 显示提示信息
+                this.error = `已自动将 ${activeProducts.length} 个商品下架，确保只有一个在售商品`
+
+                // 延迟清除提示信息
+                setTimeout(() => {
+                  this.error = ''
+                }, 3000)
+
+                // 逐个下架其他商品
+                for (const p of activeProducts) {
+                  await this.$axios.put(`/products/${p.id}/deactivate`)
+                }
+              }
             }
 
             // 刷新商品列表
@@ -127,6 +157,12 @@
       border: 1px solid #f5c6cb;
     }
 
+    .alert-info {
+      background-color: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
     .product-table {
       width: 100%;
       border-collapse: collapse;
@@ -140,10 +176,22 @@
       border-bottom: 1px solid #ddd;
     }
 
+    .status-active {
+      color: #28a745;
+      font-weight: bold;
+    }
+
+    .status-inactive {
+      color: #6c757d;
+    }
+
+    .status-frozen {
+      color: #dc3545;
+    }
+
     .btn {
       margin-right: 0.5rem;
       padding: 0.25rem 0.75rem;
-      background: #007bff;
       color: white;
       text-decoration: none;
       border: none;
@@ -151,8 +199,14 @@
       cursor: pointer;
     }
 
+    /* 下架按钮 - 灰色 */
     .btn-secondary {
       background: #6c757d;
+    }
+
+    /* 上架按钮 - 绿色 */
+    .btn-success {
+      background: #28a745;
     }
 
     .btn:disabled {

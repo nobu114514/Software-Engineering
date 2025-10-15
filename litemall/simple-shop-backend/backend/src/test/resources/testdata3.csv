@@ -1,0 +1,2 @@
+用例 ID,username,password,productName,price,imageUrl,description
+1,seller,123456,测试商品1,99.99,https://example.com/image1.jpg,这是测试商品1的描述

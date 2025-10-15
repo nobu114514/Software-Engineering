@@ -20,13 +20,12 @@ public class BuyerService {
 
     @Transactional
     public Buyer createBuyer(Buyer buyer, Long productId) {
-        productService.getProductById(productId).ifPresent(product -> {
+        return productService.getProductById(productId).map(product -> {
             buyer.setProduct(product);
             // 同时冻结商品
             productService.freezeProduct(productId, true);
-            buyerRepository.save(buyer);
-        });
-        return buyer;
+            return buyerRepository.save(buyer);
+        }).orElse(null); // 当找不到产品时返回null
     }
 
     public List<Buyer> getBuyersByProduct(Product product) {

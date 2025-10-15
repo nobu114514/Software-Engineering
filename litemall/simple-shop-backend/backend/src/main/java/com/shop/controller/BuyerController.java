@@ -18,7 +18,11 @@ public class BuyerController {
     @PostMapping("/product/{productId}")
     public ResponseEntity<Buyer> createBuyer(@RequestBody Buyer buyer, @PathVariable Long productId) {
         Buyer created = buyerService.createBuyer(buyer, productId);
-        return ResponseEntity.ok(created);
+        if (created != null) {
+            return ResponseEntity.ok(created);
+        } else {
+            return ResponseEntity.notFound().build(); // 产品不存在时返回404
+        }
     }
 
     @GetMapping

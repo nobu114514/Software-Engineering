@@ -1,0 +1,5 @@
+com\shop\test\db\DatabaseInitializationTest.class
+com\shop\test\buyer\BuyerFunctionTest.class
+com\shop\test\seller\PurchaseIntentionTest.class
+com\shop\test\seller\SellerLoginTest.class
+com\shop\test\seller\ProductManagementTest.class

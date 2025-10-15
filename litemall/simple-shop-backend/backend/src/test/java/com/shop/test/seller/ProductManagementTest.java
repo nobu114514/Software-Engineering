@@ -35,7 +35,7 @@ public class ProductManagementTest {
                         .content(objectMapper.writeValueAsString(product)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("测试商品"))
-                .andExpect(jsonPath("$.isActive").value(true));
+                .andExpect(jsonPath("$.active").value(true));
     }
 
     // 测试用例 S-004：商品上架/下架
@@ -57,7 +57,7 @@ public class ProductManagementTest {
         // 测试上架（激活）
         mockMvc.perform(put("/api/products/" + productId + "/activate"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.isActive").value(true));
+                .andExpect(jsonPath("$.active").value(true));
 
         // 测试下架（通过冻结实现）
         mockMvc.perform(put("/api/products/" + productId + "/freeze")
@@ -91,7 +91,7 @@ public class ProductManagementTest {
         // 验证冻结状态
         mockMvc.perform(get("/api/products/" + productId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.isFrozen").value(true));
+                .andExpect(jsonPath("$.frozen").value(true));
 
         // 解冻商品
         mockMvc.perform(put("/api/products/" + productId + "/freeze")

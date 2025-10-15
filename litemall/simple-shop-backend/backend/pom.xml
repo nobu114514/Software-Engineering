@@ -12,7 +12,7 @@
     <artifactId>simple-shop</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>simple-shop</name>
-    <description>极简在线购物系统</description>
+    <description>拼夕夕在线购物系统</description>
 
     <properties>
         <java.version>11</java.version>

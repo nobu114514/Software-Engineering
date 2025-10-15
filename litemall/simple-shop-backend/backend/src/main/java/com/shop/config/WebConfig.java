@@ -11,8 +11,9 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         // 允许所有/api/**路径的请求跨域访问
         registry.addMapping("/api/**")
-                // 允许前端的IP地址和端口访问（替换成你的前端实际地址）
-                .allowedOrigins("http://10.234.47.159:8080", "http://localhost:8080")
+                // 在开发环境中使用allowedOriginPatterns替代allowedOrigins
+                // 这样可以同时使用通配符和允许凭证，解决CORS冲突
+                .allowedOriginPatterns("*")
                 // 允许的HTTP方法
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 // 允许的请求头

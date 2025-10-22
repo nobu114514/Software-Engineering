@@ -20,7 +20,7 @@
         <junit.version>5.8.2</junit.version>
         <assertj.version>3.23.1</assertj.version>
         <webdrivermanager.version>5.5.3</webdrivermanager.version>
-        <selenium.version>4.33.0</selenium.version>
+        <selenium.version>4.22.0</selenium.version>
     </properties>
 
     <dependencies>

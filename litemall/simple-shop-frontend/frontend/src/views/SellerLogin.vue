@@ -33,9 +33,16 @@ export default {
     }
   },
   created() {
-    // 如果已登录，跳转到后台
+    // 如果已登录为卖家，跳转到后台
     if (localStorage.getItem('sellerLoggedIn')) {
       this.$router.push('/seller/dashboard')
+    }
+    // 如果已登录为用户，提示并跳转到首页
+    if (localStorage.getItem('customerLoggedIn')) {
+      this.error = '请先退出用户登录'
+      setTimeout(() => {
+        this.$router.push('/')
+      }, 2000)
     }
   },
   methods: {

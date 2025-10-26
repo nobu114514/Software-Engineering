@@ -4,9 +4,18 @@
       <div class="navbar-container">
         <a href="/" class="navbar-logo">拼夕夕</a>
         <div class="navbar-menu">
-          <a href="/seller/login" v-if="!isSellerLoggedIn">卖家入口</a>
+          <!-- 用户入口 - 未登录状态且卖家未登录时显示 -->
+          <a href="/login" v-if="!isCustomerLoggedIn && !isSellerLoggedIn" class="navbar-link">用户登录</a>
+          <a href="/register" v-if="!isCustomerLoggedIn && !isSellerLoggedIn" class="navbar-link">注册账号</a>
+          
+          <!-- 用户已登录状态 -->
+          <span v-if="isCustomerLoggedIn">{{ customerUsername || '用户' }}</span>
+          <button @click="customerLogout" v-if="isCustomerLoggedIn" class="navbar-btn">退出登录</button>
+          
+          <!-- 卖家入口 - 未登录状态且用户未登录时显示 -->
+          <a href="/seller/login" v-if="!isSellerLoggedIn && !isCustomerLoggedIn">卖家入口</a>
           <a href="/seller/dashboard" v-if="isSellerLoggedIn">卖家后台</a>
-          <button @click="logout" v-if="isSellerLoggedIn">退出登录</button>
+          <button @click="sellerLogout" v-if="isSellerLoggedIn">退出登录</button>
         </div>
       </div>
     </nav>
@@ -24,7 +33,9 @@ export default {
   name: 'App',
   data() {
     return {
-      isSellerLoggedIn: false
+      isSellerLoggedIn: false,
+      isCustomerLoggedIn: false,
+      customerUsername: ''
     }
   },
   created() {
@@ -32,12 +43,25 @@ export default {
   },
   methods: {
     checkLoginStatus() {
+      // 检查卖家登录状态
       this.isSellerLoggedIn = !!localStorage.getItem('sellerLoggedIn')
+      // 检查客户登录状态
+      this.isCustomerLoggedIn = !!localStorage.getItem('customerLoggedIn')
+      this.customerUsername = localStorage.getItem('customerUsername') || ''
     },
-    logout() {
+    // 卖家退出登录
+    sellerLogout() {
       localStorage.removeItem('sellerLoggedIn')
       this.isSellerLoggedIn = false
       this.$router.push('/seller/login')
+    },
+    // 客户退出登录
+    customerLogout() {
+      localStorage.removeItem('customerLoggedIn')
+      localStorage.removeItem('customerUsername')
+      this.isCustomerLoggedIn = false
+      this.customerUsername = ''
+      this.$router.push('/login')
     }
   },
   watch: {
@@ -95,7 +119,7 @@ body {
   align-items: center;
 }
 
-.navbar-menu a {
+.navbar-menu a, .navbar-link {
   color: white;
   text-decoration: none;
   font-size: 1rem;
@@ -103,11 +127,11 @@ body {
   transition: opacity 0.2s;
 }
 
-.navbar-menu a:hover {
+.navbar-menu a:hover, .navbar-link:hover {
   opacity: 0.8;
 }
 
-.navbar-menu button {
+.navbar-menu button, .navbar-btn {
   background: white;
   color: #E02E24;
   border: none;

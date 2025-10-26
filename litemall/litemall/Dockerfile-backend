@@ -1,0 +1,19 @@
+FROM openjdk:11-jre-slim
+
+# 设置维护者信息
+LABEL maintainer="Simple Shop Team <team@simpleshop.com>"
+
+# 创建工作目录
+WORKDIR /app
+
+# 设置环境变量
+ENV JAVA_OPTS="-Xms256m -Xmx512m"
+
+# 复制jar文件到容器中
+COPY backend/target/simple-shop-0.0.1-SNAPSHOT.jar app.jar
+
+# 暴露服务端口
+EXPOSE 8081
+
+# 启动命令
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

@@ -1,4 +1,4 @@
-package com.shop.test.db;
+package com.shop.test.api.db;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

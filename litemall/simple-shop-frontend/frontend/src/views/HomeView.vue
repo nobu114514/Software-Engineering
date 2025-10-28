@@ -32,7 +32,7 @@
       <!-- 只有商品未冻结，才显示购买按钮 -->
       <button
         class="btn"
-        @click="showBuyForm = true"
+        @click="handleBuyClick"
         v-if="!product.frozen">
         我要购买
       </button>
@@ -116,8 +116,25 @@ export default {
 
     // 提交购买意向
     async submitBuy() {
+      // 再次检查用户是否已登录（防止绕过前端验证）
+      if (!localStorage.getItem('customerLoggedIn')) {
+        this.error = '未登录，跳转至登录界面'
+        // 2秒后跳转到登录页面
+        setTimeout(() => {
+          this.$router.push('/login')
+        }, 2000)
+        return
+      }
+      
       try {
-        await this.$axios.post(`/buyers/product/${this.product.id}`, this.buyer)
+        // 获取当前登录的用户名
+        const username = localStorage.getItem('customerUsername')
+        // 发送请求时携带用户名作为请求头
+        await this.$axios.post(`/buyers/product/${this.product.id}`, this.buyer, {
+          headers: {
+            'X-Username': username
+          }
+        })
         this.buySuccess = true
         this.showBuyForm = false
         // 刷新商品状态
@@ -136,6 +153,22 @@ export default {
     handleImageError(e) {
       // 如果图片加载失败，使用默认图片
       e.target.src = 'https://img.pngsucai.com/00/87/02/31a2f72e4e901438.webp'
+    },
+    
+    // 处理购买按钮点击事件
+    handleBuyClick() {
+      // 检查用户是否已登录
+      if (!localStorage.getItem('customerLoggedIn')) {
+        // 未登录，显示提示信息
+        this.error = '未登录，跳转至登录界面'
+        // 2秒后跳转到登录页面
+        setTimeout(() => {
+          this.$router.push('/login')
+        }, 2000)
+      } else {
+        // 已登录，显示购买表单
+        this.showBuyForm = true
+      }
     }
   }
 }

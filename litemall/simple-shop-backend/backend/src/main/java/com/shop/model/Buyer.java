@@ -25,6 +25,9 @@ public class Buyer {
     private boolean isCompleted; // 交易是否完成
     
     private LocalDateTime createdAt;
+    
+    @Column(name = "customer_id")
+    private Long customerId; // 客户ID
 
     // Getters and Setters
     public Long getId() {
@@ -89,6 +92,14 @@ public class Buyer {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+    
+    public Long getCustomerId() {
+        return customerId;
+    }
+    
+    public void setCustomerId(Long customerId) {
+        this.customerId = customerId;
     }
 
     @PrePersist

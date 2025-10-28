@@ -27,6 +27,7 @@
           <tr>
             <th>订单ID</th>
             <th>商品</th>
+            <th>类型</th>
             <th>价格</th>
             <th>数量</th>
             <th>下单时间</th>
@@ -37,6 +38,7 @@
           <tr v-for="order in customerOrders" :key="order.id">
             <td>{{ order.id }}</td>
             <td>{{ order.product_name || '未知商品' }}</td>
+            <td>{{ order.type === 'buyer' ? '购买意向' : '订单' }}</td>
             <td>¥{{ (order.price || 0).toFixed(2) }}</td>
             <td>{{ order.quantity || 1 }}</td>
             <td>{{ formatDate(order.created_at) }}</td>

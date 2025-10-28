@@ -1,4 +1,4 @@
-package com.shop.test.seller;
+package com.shop.test.api.seller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.shop.model.Buyer;

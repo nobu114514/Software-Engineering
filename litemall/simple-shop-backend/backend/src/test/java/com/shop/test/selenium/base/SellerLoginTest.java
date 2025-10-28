@@ -1,4 +1,4 @@
-package com.shop.test.selenium;
+package com.shop.test.selenium.base;
 
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;

@@ -3,12 +3,17 @@ package com.shop.controller;
 import com.shop.model.Customer;
 import com.shop.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -81,10 +86,40 @@ public class CustomerController {
         return ResponseEntity.ok(customers);
     }
 
+    // 获取当前登录用户的订单记录（根据请求头中的用户名）
+    @GetMapping("/orders")
+    public ResponseEntity<?> getAllOrders(
+            @RequestHeader(value = "X-Username", required = false) String username,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "desc") String sort) {
+        // 验证用户是否已登录
+        if (username == null || username.isEmpty()) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "请先登录再查看订单");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+        
+        // 根据用户名查找客户
+        Optional<Customer> customerOpt = customerService.findByUsername(username);
+        if (!customerOpt.isPresent()) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "用户不存在");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        }
+        
+        // 获取客户ID并查询订单
+        Long customerId = customerOpt.get().getId();
+        List<Map<String, Object>> orders = customerService.getCustomerOrders(customerId, status, sort);
+        return ResponseEntity.ok(orders);
+    }
+
     // 获取指定客户的订单记录（仅卖家可访问）
     @GetMapping("/customers/{customerId}/orders")
     public ResponseEntity<List<Map<String, Object>>> getCustomerOrders(@PathVariable Long customerId) {
-        List<Map<String, Object>> orders = customerService.getCustomerOrders(customerId);
+        // 调用service方法，使用默认的筛选参数（不筛选状态，按时间降序）
+        List<Map<String, Object>> orders = customerService.getCustomerOrders(customerId, null, "desc");
         return ResponseEntity.ok(orders);
     }
 }

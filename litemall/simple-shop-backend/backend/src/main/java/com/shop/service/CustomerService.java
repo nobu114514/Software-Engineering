@@ -66,41 +66,54 @@ public class CustomerService {
         return customerRepository.findAll();
     }
     
-    // 获取指定客户的订单记录（包括购买意向）
-    public List<Map<String, Object>> getCustomerOrders(Long customerId) {
-        // 检查客户是否存在
-        if (!customerRepository.existsById(customerId)) {
-            return Collections.emptyList();
+    // 获取指定客户的订单记录（从buyers表中）
+    public List<Map<String, Object>> getCustomerOrders(Long customerId, String status, String sort) {
+        // 构建SQL查询，支持状态筛选和排序
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("SELECT ")
+                 .append("b.id as id, ")
+                 .append("b.address as address, ")
+                 .append("b.created_at as created_at, ")
+                 .append("b.is_completed as is_completed, ")
+                 .append("b.name as buyer_name, ")
+                 .append("b.notes as notes, ")
+                 .append("b.phone as phone, ")
+                 .append("p.name as product_name, ")
+                 .append("p.price as price, ")
+                 .append("CASE WHEN b.is_completed THEN 'completed' ELSE 'pending' END as status ")
+                 .append("FROM buyers b ")
+                 .append("LEFT JOIN products p ON b.product_id = p.id ")
+                 .append("WHERE b.customer_id = ? ");
+        
+        // 添加状态筛选条件
+        List<Object> paramsList = new ArrayList<>();
+        paramsList.add(customerId);
+        
+        if (status != null && !status.isEmpty()) {
+            if ("completed".equals(status)) {
+                sqlBuilder.append("AND b.is_completed = true ");
+            } else if ("pending".equals(status)) {
+                sqlBuilder.append("AND b.is_completed = false ");
+            }
         }
         
-        // 使用原生SQL查询订单数据和购买意向
-        String sql = "SELECT " +
-                     "CASE " +
-                     "WHEN o.id IS NOT NULL THEN 'order' " +
-                     "WHEN b.id IS NOT NULL THEN 'buyer' " +
-                     "END as type, " +
-                     "COALESCE(o.id, b.id) as id, " +
-                     "COALESCE(p1.name, p2.name) as product_name, " +
-                     "o.price, " +
-                     "o.quantity, " +
-                     "COALESCE(o.created_at, b.created_at) as created_at, " +
-                     "COALESCE(o.status, CASE WHEN b.is_completed THEN 'completed' ELSE 'pending' END) as status " +
-                     "FROM customers c " +
-                     "LEFT JOIN orders o ON c.id = o.customer_id " +
-                     "LEFT JOIN product p1 ON o.product_id = p1.id " +
-                     "LEFT JOIN buyers b ON c.id = b.customer_id " +
-                     "LEFT JOIN product p2 ON b.product_id = p2.id " +
-                     "WHERE c.id = ? AND (o.id IS NOT NULL OR b.id IS NOT NULL) " +
-                     "ORDER BY created_at DESC";
+        // 添加排序条件
+        String orderDirection = "desc".equalsIgnoreCase(sort) ? "DESC" : "ASC";
+        sqlBuilder.append("ORDER BY b.created_at ").append(orderDirection);
         
-        return jdbcTemplate.query(sql, new Object[]{customerId}, (rs, rowNum) -> {
+        Object[] params = paramsList.toArray();
+        
+        return jdbcTemplate.query(sqlBuilder.toString(), params, (rs, rowNum) -> {
             Map<String, Object> order = new HashMap<>();
-            order.put("type", rs.getString("type"));
             order.put("id", rs.getLong("id"));
+            order.put("address", rs.getString("address"));
+            order.put("created_at", rs.getTimestamp("created_at"));
+            order.put("is_completed", rs.getBoolean("is_completed"));
+            order.put("buyer_name", rs.getString("buyer_name"));
+            order.put("notes", rs.getString("notes"));
+            order.put("phone", rs.getString("phone"));
             order.put("product_name", rs.getString("product_name"));
             order.put("price", rs.getBigDecimal("price"));
-            order.put("quantity", rs.getInt("quantity"));
-            order.put("created_at", rs.getTimestamp("created_at"));
             order.put("status", rs.getString("status"));
             return order;
         });

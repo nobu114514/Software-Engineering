@@ -9,6 +9,7 @@ import ProductHistory from '../views/ProductHistory.vue'
 import BuyerList from '../views/BuyerList.vue'
 import ChangePassword from '../views/ChangePassword.vue'
 import CustomerList from '../views/CustomerList.vue'
+import CustomerOrders from '../views/CustomerOrders.vue'
 
 const routes = [
   {
@@ -60,6 +61,12 @@ const routes = [
     name: 'changePassword',
     component: ChangePassword,
     meta: { requiresAuth: true, role: 'seller' }
+  },
+  {
+    path: '/orders',
+    name: 'customerOrders',
+    component: CustomerOrders,
+    meta: { requiresAuth: true, role: 'customer' }
   },
   {
     path: '/seller/customers',

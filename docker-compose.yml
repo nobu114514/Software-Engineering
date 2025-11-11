@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # MySQL数据库服务
+  db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: 'simple_shop'
+      MYSQL_ROOT_PASSWORD: '2004'
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端服务
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile-backend
+    restart: always
+    ports:
+      - '8081:8081'
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/simple_shop?useSSL=false&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: '2004'
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: 'true'
+    volumes:
+      - backend-logs:/app/logs
+
+  # 前端服务
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile-frontend
+    restart: always
+    ports:
+      - '80:80'
+    depends_on:
+      - backend
+
+volumes:
+  # MySQL数据持久化卷
+  mysql-data:
+    driver: local
+  # 后端日志卷
+  backend-logs:
+    driver: local

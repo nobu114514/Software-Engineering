@@ -1,0 +1,16 @@
+com\shop\test\selenium\A\ProductManagementTest.class
+com\shop\test\unit\ProductControllerTest.class
+com\shop\test\api\db\DatabaseInitializationTest.class
+com\shop\test\selenium\base\SellerLoginTest.class
+com\shop\test\unit\ProductSerializationTest.class
+com\shop\test\selenium\A\UpgradeATestBase.class
+com\shop\test\api\seller\PurchaseIntentionTest.class
+com\shop\test\selenium\base\SellerProductTest.class
+com\shop\test\api\seller\ProductManagementTest.class
+com\shop\test\selenium\base\PersonalInfoTest.class
+com\shop\test\api\buyer\BuyerFunctionTest.class
+com\shop\test\unit\ProductServiceTest.class
+com\shop\test\unit\BuyerServiceTest.class
+com\shop\test\selenium\base\LoginUITest.class
+com\shop\test\selenium\A\CustomerManagementTest.class
+com\shop\test\api\seller\SellerLoginTest.class

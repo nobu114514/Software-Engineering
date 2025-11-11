@@ -1,0 +1,70 @@
+1.创建数据库：
+打开 Navicat，连接到你的 MySQL 服务器
+右键点击连接名 → 新建数据库
+数据库名：simple_shop
+字符集：utf8mb4
+排序规则：utf8mb4_general_ci
+点击 "确定" 创建
+
+2.创建数据表：执行以下 SQL 语句
+-- 商品表
+CREATE TABLE product (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    price DECIMAL(10, 2) NOT NULL,
+    image_url VARCHAR(255),
+    is_active BOOLEAN DEFAULT TRUE,
+    is_frozen BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 购买意向表
+CREATE TABLE purchase_intention (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    product_id BIGINT NOT NULL,
+    buyer_name VARCHAR(255) NOT NULL,
+    buyer_phone VARCHAR(20) NOT NULL,
+    buyer_address VARCHAR(255),
+    message TEXT,
+    status ENUM('PENDING', 'SUCCESS', 'FAILED') DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES product(id)
+);
+
+-- 卖家表
+CREATE TABLE seller (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 初始卖家数据（密码：password，已加密）
+INSERT INTO seller (username, password) 
+VALUES ('seller', '111111');
+
+3.打开src/main/resources/application.properties文件
+修改数据库配置为你的 MySQL 信息
+
+4.运行后端项目：右键点击 → "Run 'SimpleShopApplication'"
+
+5.在前端的终端里执行命令：
+进入simple-shop-frontend，在 Terminal 中执行命令：
+npm install
+npm install --save-dev eslint eslint-plugin-vue @babel/eslint-parser @babel/core @babel/preset-env
+
+6.运行前端项目：
+进入simple-shop-frontend，在 Terminal 中执行命令：npm run serve
+
+7.前端服务将运行在 http://localhost:8080
+在浏览器中输入网址访问系统：
+买家页面：http://localhost:8080
+卖家登录页：http://localhost:8080/seller/login
+初始卖家用户名：seller
+初始卖家密码：password
+初始顾客用户名：buyer
+初始顾客密码：password
+

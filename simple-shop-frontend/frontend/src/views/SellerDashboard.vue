@@ -5,6 +5,8 @@
     <div class="dashboard-menu">
       <a href="/seller/product/new" class="btn">发布新商品</a>
       <a href="/seller/products" class="btn">商品历史</a>
+      <a href="/seller/categories" class="btn">分类管理</a>
+      <a href="/seller/sub-categories" class="btn">二级分类管理</a>
       <a href="/seller/buyers" class="btn">购买意向列表</a>
       <a href="/seller/customers" class="btn">客户管理</a>
       <a href="/seller/change-password" class="btn">修改密码</a>

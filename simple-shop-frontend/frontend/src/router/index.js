@@ -11,6 +11,8 @@ import ChangePassword from '../views/ChangePassword.vue'
 import CustomerList from '../views/CustomerList.vue'
 import CustomerOrders from '../views/CustomerOrders.vue'
 import ProductBatchForm from '../views/ProductBatchForm.vue'
+import SellerCategories from '../views/SellerCategories.vue'
+import SellerSubCategories from '../views/SellerSubCategories.vue'
 
 const routes = [
   {
@@ -82,6 +84,18 @@ const routes = [
     path: '/seller/customers',
     name: 'customerList',
     component: CustomerList,
+    meta: { requiresAuth: true, role: 'seller' }
+  },
+  {
+    path: '/seller/categories',
+    name: 'sellerCategories',
+    component: SellerCategories,
+    meta: { requiresAuth: true, role: 'seller' }
+  },
+  {
+    path: '/seller/sub-categories',
+    name: 'sellerSubCategories',
+    component: SellerSubCategories,
     meta: { requiresAuth: true, role: 'seller' }
   },
   ]

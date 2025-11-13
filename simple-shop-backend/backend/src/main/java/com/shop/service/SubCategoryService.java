@@ -1,5 +1,6 @@
 package com.shop.service;
 
+import com.shop.dto.SubCategoryDTO;
 import com.shop.model.SubCategory;
 
 import java.util.List;
@@ -18,4 +19,15 @@ public interface SubCategoryService {
     SubCategory updateSubCategory(SubCategory subCategory);
 
     void deleteSubCategory(Long id);
+    
+    // DTO方法
+    SubCategoryDTO createSubCategory(SubCategoryDTO subCategoryDTO);
+    
+    SubCategoryDTO updateSubCategory(Long id, SubCategoryDTO subCategoryDTO);
+    
+    Optional<SubCategoryDTO> getSubCategoryDTOById(Long id);
+    
+    List<SubCategoryDTO> getAllSubCategoryDTOs();
+    
+    List<SubCategoryDTO> getSubCategoryDTOsByCategoryId(Long categoryId);
 }

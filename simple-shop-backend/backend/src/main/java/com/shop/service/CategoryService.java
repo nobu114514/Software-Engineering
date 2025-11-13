@@ -1,5 +1,6 @@
 package com.shop.service;
 
+import com.shop.dto.CategoryDTO;
 import com.shop.model.Category;
 
 import java.util.List;
@@ -18,4 +19,13 @@ public interface CategoryService {
     Category updateCategory(Category category);
 
     void deleteCategory(Long id);
+    
+    // DTO方法
+    CategoryDTO createCategory(CategoryDTO categoryDTO);
+    
+    CategoryDTO updateCategory(Long id, CategoryDTO categoryDTO);
+    
+    CategoryDTO getCategoryDTOById(Long id);
+    
+    List<CategoryDTO> getAllCategoryDTOs();
 }

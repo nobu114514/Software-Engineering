@@ -9,6 +9,19 @@ dist/
 dist-ssr/
 *.local
 
+# Vue相关构建文件
+*.tsbuildinfo
+.cache/
+.parcel-cache/
+.nuxt/
+.vuepress/dist
+.serverless/
+.fusebox/
+.dynamodb/
+.tern-port
+.vscode-test
+.yarn-integrity
+
 # 日志文件
 logs
 *.log
@@ -36,31 +49,20 @@ lerna-debug.log*
 .env.production
 .env.development
 
-# Maven构建输出
-target/
-*.jar
-*.war
-
-# Gradle构建输出
-build/
-.gradle/
-gradle-wrapper.jar
-
-# 数据库相关
-*.sql
-*.sql.gz
-*.db
-*.sqlite
-
-# 测试覆盖率
-coverage/
-*.lcov
-.nyc_output
-
 # 临时文件
 *.tmp
 *.temp
 .cache/
+.temp/
+.tmp/
+
+# 编辑器特定文件
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
 
 # OS生成的文件
 Thumbs.db
@@ -71,21 +73,16 @@ Thumbs.db
 .Trashes
 ehthumbs.db
 
-# 系统文件
-.DS_Store
-Thumbs.db
+# 前端特有临时文件
+*.orig
+*.rej
 
-# IDE配置文件
-.idea/
-*.iml
-*.ipr
-*.iws
+# 前端测试覆盖率
+coverage/
+.nyc_output
 
-# 上传目录
-uploads/
-
-# 项目特定文件
-docker-compose.override.yml
+# 前端调试工具生成文件
+.debug/
 
 # Windows批处理文件备份
 *.bak
@@ -95,24 +92,6 @@ docker-compose.override.yml
 *.seed
 *.pid.lock
 
-# 前端构建更全面覆盖
-*.tsbuildinfo
-
-# 部署相关文件
-.env.build
-.env.deploy
-
-# 文档编译输出
-_site/
-.jekyll-cache/
-
-# 可能的其他构建目录
-builds/
-out/
-
-# 历史记录文件
-.history/
-
-# 文件管理器生成文件
-Desktop.ini
-.Trash-*
+# 文档生成输出
+.vuepress/dist
+_docs/

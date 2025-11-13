@@ -15,8 +15,10 @@
         v-model="searchKeyword" 
         placeholder="搜索用户名或手机号"
         @keyup.enter="handleSearch"
+        @input="handleInput"
+        :class="{ 'search-active': isSearchEnabled }"
       >
-      <button class="btn" @click="handleSearch">搜索</button>
+      <button class="btn" @click="handleSearch" :class="{ 'active': isSearchEnabled }">搜索</button>
       <button class="btn btn-secondary" @click="resetSearch">重置</button>
       <button class="btn btn-info" @click="toggleSortOrder">
         {{ isAscending ? '时间升序' : '时间倒序' }}
@@ -146,6 +148,7 @@ export default {
       totalPages: 0,
       // 搜索相关
       searchKeyword: '',
+      isSearchEnabled: false, // 控制搜索功能是否启用，初始为false
       // 排序相关
       isAscending: false // false表示降序（最新的在前），true表示升序（最早的在前）
     }
@@ -197,16 +200,31 @@ export default {
       async fetchCustomers() {
       try {
         this.loading = true
-        // 调用后端API获取客户列表，传递分页和搜索参数
         const params = {
           page: this.currentPage,
           size: this.pageSize
         }
-        // 只有当搜索框不为空时才添加keyword参数
-        if (this.searchKeyword && this.searchKeyword.trim()) {
-          params.keyword = this.searchKeyword.trim()
+        
+        let response;
+        const trimmedKeyword = this.searchKeyword ? this.searchKeyword.trim() : '';
+        
+        console.log('API调用信息:', {
+          isSearchEnabled: this.isSearchEnabled,
+          trimmedKeyword: trimmedKeyword,
+          params: params
+        });
+        
+        // 核心逻辑：根据搜索模式决定调用哪个接口
+        if (this.isSearchEnabled) {
+          // 搜索模式下，调用搜索接口
+          params.keyword = trimmedKeyword; // 即使是空字符串也传递，由后端处理
+          console.log('调用搜索接口: /customers');
+          response = await this.$axios.get('/customers', { params });
+        } else {
+          params.keyword = trimmedKeyword; // 即使是空字符串也传递，由后端处理
+          console.log('调用搜索接口: /customers');
+          response = await this.$axios.get('/customers', { params });
         }
-        const response = await this.$axios.get('/customers', { params })
 
         
         // 处理响应数据
@@ -246,15 +264,31 @@ export default {
     },
     
     handleSearch() {
-      // 先对搜索关键词进行trim处理，确保只有空格时也能正确显示全部用户
-      this.searchKeyword = this.searchKeyword.trim()
-      this.currentPage = 0 // 搜索时重置到第一页
-      this.fetchCustomers()
+      // 先对搜索关键词进行trim处理
+      const trimmedKeyword = this.searchKeyword.trim();
+      // 保存trim后的值
+      this.searchKeyword = trimmedKeyword;
+      // 无论是否有关键词，都启用搜索功能并执行搜索
+      // 后端已经修改为能正确处理空字符串的情况
+      this.isSearchEnabled = true; // 启用搜索功能
+      this.currentPage = 0; // 搜索时重置到第一页
+      this.fetchCustomers();
+    },
+    
+    // 处理输入框输入事件 - 不再自动启用搜索功能
+    handleInput() {
+      // 输入框输入时不自动启用搜索，只在点击搜索按钮时启用
+      // 这样用户可以随意输入但只有点击搜索才会执行搜索
     },
     
     resetSearch() {
+      // 清空搜索关键词
       this.searchKeyword = ''
+      // 关闭搜索功能，回到初始状态
+      this.isSearchEnabled = false
+      // 重置页码
       this.currentPage = 0
+      // 重新获取所有用户数据
       this.fetchCustomers()
     },
     
@@ -422,6 +456,11 @@ tr:hover {
   border-radius: 4px;
   font-size: 14px;
   max-width: 400px;
+}
+
+.search-bar input.search-active {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
 .btn {

@@ -16,6 +16,6 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
     boolean existsByUsername(String username);
     
     // 支持分页和搜索的查询方法
-    @Query("SELECT c FROM Customer c WHERE (:keyword IS NULL OR c.username LIKE %:keyword% OR c.phone LIKE %:keyword%)")
+    @Query("SELECT c FROM Customer c WHERE (:keyword IS NULL OR :keyword = '' OR c.username LIKE %:keyword% OR c.phone LIKE %:keyword%)")
     Page<Customer> findByKeyword(@Param("keyword") String keyword, Pageable pageable);
 }

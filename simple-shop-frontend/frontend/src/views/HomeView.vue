@@ -187,23 +187,23 @@ export default {
     async fetchProducts() {
       try {
         this.loading = true;
-        let url = 'http://localhost:8081/api/products';
+        let url = 'http://localhost:8081/api/products/active-list';
         
         // 根据选择的分类构建请求URL
         if (this.selectedSubCategoryId) {
           // 如果选择了二级分类，使用二级分类查询接口
-          url = `http://localhost:8081/api/products/sub-category/${this.selectedSubCategoryId}`;
+          url = `http://localhost:8081/api/products/sub-category/${this.selectedSubCategoryId}/active`;
         } else if (this.selectedCategoryId) {
           // 如果只选择了一级分类，使用一级分类查询接口
-          url = `http://localhost:8081/api/products/category/${this.selectedCategoryId}`;
+          url = `http://localhost:8081/api/products/category/${this.selectedCategoryId}/active`;
         }
         
         const response = await axios.get(url);
         // 确保返回的是数组，考虑data字段嵌套结构
         const data = response.data.data || response.data;
         const productsArray = Array.isArray(data) ? data : [data].filter(Boolean);
-        // 只显示激活状态的商品
-        this.products = productsArray.filter(product => product.active);
+        // 新端点已确保只返回激活状态的商品
+        this.products = productsArray;
       } catch (error) {
         console.error('获取商品信息失败:', error);
         this.error = '获取商品信息失败，请稍后重试。';
@@ -232,12 +232,13 @@ export default {
       }
       
       try {
-        // 获取当前登录的用户名
+        // 获取当前登录的用户名并进行编码，确保符合HTTP请求头的ISO-8859-1编码要求
         const username = localStorage.getItem('customerUsername')
-        // 发送请求时携带用户名作为请求头
+        const encodedUsername = encodeURIComponent(username || '')
+        // 发送请求时携带编码后的用户名作为请求头
         await this.$axios.post(`/buyers/product/${this.currentProduct.id}`, this.buyer, {
           headers: {
-            'X-Username': username
+            'X-Username': encodedUsername
           }
         })
         this.buySuccess = true

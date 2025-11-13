@@ -80,12 +80,41 @@ public class CustomerController {
         return ResponseEntity.ok(response);
     }
 
-    // 获取所有客户列表（仅卖家可访问）- 保持向后兼容
+    // 获取所有客户列表（仅卖家可访问）- 专门用于搜索功能
     @GetMapping("/customers")
-    public ResponseEntity<?> getCustomers(
-            @RequestParam(required = false) String keyword,
+    public ResponseEntity<?> searchCustomers(
+            @RequestParam(required = true) String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
+        
+        // 调试日志
+        System.out.println("Received search keyword: '" + keyword + "'");
+        
+        // 对搜索关键词进行trim处理
+        String processedKeyword = keyword != null ? keyword.trim() : null;
+        System.out.println("Processed search keyword: '" + processedKeyword + "'");
+        
+        // 支持分页和搜索的查询
+        Page<Customer> customerPage = customerService.getCustomers(processedKeyword, page, size);
+        
+        // 构建响应对象，包含数据和分页信息
+        Map<String, Object> response = new HashMap<>();
+        response.put("customers", customerPage.getContent());
+        response.put("currentPage", customerPage.getNumber());
+        response.put("totalItems", customerPage.getTotalElements());
+        response.put("totalPages", customerPage.getTotalPages());
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    // 获取全部客户信息（仅卖家可访问）
+    @GetMapping("/customers/all")
+    public ResponseEntity<?> getAllCustomers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        
+        // 调试日志
+        System.out.println("Getting all customers with pagination: page=" + page + ", size=" + size);
         
         // 如果没有指定分页参数或者设置为特殊值，返回所有数据（兼容旧接口）
         if (page < 0 || size <= 0) {
@@ -93,8 +122,8 @@ public class CustomerController {
             return ResponseEntity.ok(customers);
         }
         
-        // 支持分页和搜索的查询
-        Page<Customer> customerPage = customerService.getCustomers(keyword, page, size);
+        // 调用专门的方法获取全部客户信息（分页）
+        Page<Customer> customerPage = customerService.getAllCustomersWithPagination(page, size);
         
         // 构建响应对象，包含数据和分页信息
         Map<String, Object> response = new HashMap<>();

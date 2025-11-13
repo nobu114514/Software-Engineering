@@ -83,20 +83,20 @@ public class CategoryController {
         Map<String, Object> response = new HashMap<>();
         try {
             return categoryService.getCategoryById(id)
-                .map(category -> {
-                    // 清除子分类引用以避免循环依赖
-                    if (category.getSubCategories() != null) {
-                        category.setSubCategories(null);
-                    }
-                    response.put("status", "success");
-                    response.put("data", category);
-                    return ResponseEntity.ok(response);
-                })
-                .orElseGet(() -> {
-                    response.put("status", "error");
-                    response.put("message", "Category not found");
-                    return ResponseEntity.status(404).body(response);
-                });
+                    .map(category -> {
+                        // 清除子分类引用以避免循环依赖
+                        if (category.getSubCategories() != null) {
+                            category.setSubCategories(null);
+                        }
+                        response.put("status", "success");
+                        response.put("data", category);
+                        return ResponseEntity.ok(response);
+                    })
+                    .orElseGet(() -> {
+                        response.put("status", "error");
+                        response.put("message", "Category not found");
+                        return ResponseEntity.status(404).body(response);
+                    });
         } catch (Exception e) {
             logger.error("Error getting category by id", e);
             response.put("status", "error");
@@ -172,7 +172,7 @@ public class CategoryController {
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
     // 商家后台分类管理API
     @PostMapping("/seller/categories")
     public ResponseEntity<Map<String, Object>> createCategory(@RequestBody CategoryDTO categoryDTO) {
@@ -191,7 +191,7 @@ public class CategoryController {
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
     @PutMapping("/seller/categories/{id}")
     public ResponseEntity<Map<String, Object>> updateCategory(@PathVariable Long id, @RequestBody CategoryDTO categoryDTO) {
         logger.info("商家更新分类: {}", id);
@@ -209,7 +209,7 @@ public class CategoryController {
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
     // 商家后台：获取所有分类列表
     @GetMapping("/seller/categories")
     public ResponseEntity<Map<String, Object>> getSellerCategories() {
@@ -227,7 +227,7 @@ public class CategoryController {
             return ResponseEntity.status(500).body(response);
         }
     }
-    
+
     @GetMapping("/seller/categories/{id}")
     public ResponseEntity<Map<String, Object>> getCategoryDetail(@PathVariable Long id) {
         logger.info("获取分类详情: {}", id);

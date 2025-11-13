@@ -1,6 +1,7 @@
 # 依赖目录
 node_modules/
-*/node_modules/
+simple-shop-frontend/node_modules/
+simple-shop-backend/node_modules/
 **/node_modules/
 /.pnp
 .pnp.js

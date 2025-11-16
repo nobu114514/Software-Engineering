@@ -60,17 +60,26 @@
             <span class="price-label">价格</span>
             <span class="price-value">¥{{ product.price.toFixed(2) }}</span>
           </div>
+          
+          <div class="product-stock-section">
+            <span class="stock-label">库存</span>
+            <span v-if="product.stock > 0" class="stock-value stock-in">有货 ({{ product.stock }}件)</span>
+            <span v-else class="stock-value stock-out">无货</span>
+          </div>
 
           <!-- 注意：这里用的是 product.frozen（后端返回的字段名），不是 isFrozen -->
           <div v-if="product.frozen" class="alert alert-danger">
             该商品正在交易中，请稍后再试。
           </div>
+          <div v-else-if="product.stock <= 0" class="alert alert-danger">
+            该商品已售罄，请稍后再试。
+          </div>
 
-          <!-- 只有商品未冻结，才显示购买按钮 -->
+          <!-- 只有商品未冻结且有库存，才显示购买按钮 -->
           <button
             class="buy-btn"
             @click="handleBuyClick"
-            v-if="!product.frozen"
+            v-if="!product.frozen && product.stock > 0"
           >
             我要购买
           </button>

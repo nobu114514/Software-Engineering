@@ -49,6 +49,9 @@ public class BuyerService {
         // 设置商品信息
         buyer.setProduct(product);
         
+        // 清除商品的subCategory，避免后续JSON序列化问题
+        product.setSubCategory(null);
+        
         // 1. 根据用户名获取客户信息，找到对应的customers表中的用户记录
         Optional<Customer> customerOpt = customerService.findByUsername(username);
         if (!customerOpt.isPresent()) {
@@ -97,8 +100,8 @@ public class BuyerService {
             Product product = buyer.getProduct();
             
             if (success) {
-                // 交易成功，商品下架
-                productService.deactivateProduct(product.getId());
+                // 交易成功，减少库存但不自动下架商品
+                productService.decreaseStock(product.getId(), 1);
             } else {
                 // 交易失败，商品解冻
                 productService.freezeProduct(product.getId(), false);

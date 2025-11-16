@@ -3,8 +3,11 @@ package com.shop.service;
 import com.shop.model.Product;
 import com.shop.model.SubCategory;
 import com.shop.repository.ProductRepository;
+import com.shop.repository.SubCategoryRepository;
+import com.shop.service.StockLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +17,12 @@ public class ProductService {
 
     @Autowired
     private ProductRepository productRepository;
+    
+    @Autowired
+    private StockLogService stockLogService;
+    
+    @Autowired
+    private SubCategoryRepository subCategoryRepository;
 
     public Optional<Product> getActiveProduct() {
         return productRepository.findByIsActiveTrue();
@@ -62,8 +71,50 @@ public class ProductService {
         return productRepository.findById(id);
     }
 
+    @Transactional
     public Product updateProduct(Product product) {
-        return productRepository.save(product);
+        // Find existing product to preserve active/frozen status
+        return productRepository.findById(product.getId())
+            .map(existingProduct -> {
+                // Update only specific fields while preserving active/frozen status
+                existingProduct.setName(product.getName());
+                existingProduct.setDescription(product.getDescription());
+                existingProduct.setImageUrl(product.getImageUrl());
+                existingProduct.setPrice(product.getPrice());
+                
+                // Record stock change if stock is different
+                if (existingProduct.getStock() != product.getStock()) {
+                    int oldStock = existingProduct.getStock();
+                    int newStock = product.getStock();
+                    String action = newStock > oldStock ? "INCREASE" : "DECREASE";
+                    String description = "管理员修改商品库存";
+                    existingProduct.setStock(newStock);
+                    // Save the updated product first
+                    Product saved = productRepository.save(existingProduct);
+                    // Log the stock change
+                    stockLogService.createStockLog(saved, newStock - oldStock, oldStock, newStock, action, description);
+                } else {
+                    existingProduct.setStock(product.getStock());
+                }
+                
+                // Load sub-category from database to maintain proper relationships
+                if (product.getSubCategory() != null && product.getSubCategory().getId() != null) {
+                    subCategoryRepository.findById(product.getSubCategory().getId())
+                        .ifPresent(existingProduct::setSubCategory);
+                }
+                
+                // If stock is greater than 0, set product to active
+                if (existingProduct.getStock() > 0) {
+                    existingProduct.setActive(true);
+                }
+                
+                // Preserve active/frozen status
+                // existingProduct.setActive(product.isActive());
+                // existingProduct.setFrozen(product.isFrozen());
+                
+                return productRepository.save(existingProduct);
+            })
+            .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + product.getId()));
     }
 
     public boolean freezeProduct(Long id, boolean freeze) {
@@ -89,14 +140,34 @@ public class ProductService {
     }
 
     public Product activateProduct(Long id) {
-        // 只激活指定商品，不移除其他商品的激活状态
         Optional<Product> productOpt = productRepository.findById(id);
         if (productOpt.isPresent()) {
             Product product = productOpt.get();
             product.setActive(true);
-            product.setFrozen(false); // 可选，确保未被冻结
             return productRepository.save(product);
         }
         return null;
+    }
+
+    // 减少库存
+    @Transactional
+    public Product decreaseStock(Product product, int quantity) {
+        if (product != null && product.getStock() >= quantity) {
+            int oldStock = product.getStock();
+            int newStock = oldStock - quantity;
+            product.setStock(newStock);
+            // Save the updated product
+            Product saved = productRepository.save(product);
+            // Log the stock change
+            stockLogService.createStockLog(saved, -quantity, oldStock, newStock, "DECREASE", "用户下单减少库存");
+            return saved;
+        }
+        return null;
+    }
+
+    @Transactional
+    public Product decreaseStock(Long productId, int quantity) {
+        Optional<Product> productOptional = productRepository.findById(productId);
+        return productOptional.map(product -> decreaseStock(product, quantity)).orElse(null);
     }
 }

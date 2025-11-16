@@ -53,6 +53,8 @@
           </router-link>
           
           <div class="product-price">价格: ¥{{ product.price.toFixed(2) }}</div>
+          <div class="product-stock" v-if="product.stock > 0">库存: {{ product.stock }} 件</div>
+          <div class="product-stock out-of-stock" v-else>库存: 无货</div>
           
           <!-- 显示商品分类信息 -->
           <div class="product-category" v-if="product.subCategory">
@@ -67,11 +69,11 @@
             该商品正在交易中，请稍后再试。
           </div>
 
-          <!-- 只有商品未冻结，才显示购买按钮 -->
+          <!-- 只有商品未冻结且有库存，才显示购买按钮 -->
           <button
             class="btn"
             @click="handleBuyClick(product)"
-            v-if="!product.frozen">
+            v-if="!product.frozen && product.stock > 0">
             我要购买
           </button>
         </div>
@@ -241,6 +243,7 @@ export default {
             'X-Username': encodedUsername
           }
         })
+        // 后端已在创建购买意向时减少库存并记录日志，无需前端额外请求
         this.buySuccess = true
         this.showBuyForm = false
         // 刷新商品列表
@@ -371,9 +374,20 @@ export default {
 }
 
 .product-category {
-  margin: 0 15px 15px;
+  margin: 0 15px 10px;
   color: #666;
   font-size: 14px;
+}
+
+.product-stock {
+  margin: 0 15px 15px;
+  color: #28a745;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.product-stock.out-of-stock {
+  color: #dc3545;
 }
 
 .btn {

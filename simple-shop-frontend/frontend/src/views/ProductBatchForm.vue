@@ -24,7 +24,8 @@
               <th style="width: 10%">商品价格</th>
               <th style="width: 10%">商品主题</th>
               <th style="width: 24%">商品详情</th>
-              <th style="width: 6%">操作</th>
+              <th style="width: 10%">库存</th>
+            <th style="width: 6%">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -61,6 +62,9 @@
                 <textarea v-model="item.description" placeholder="请输入商品详情"></textarea>
               </td>
               <td>
+                <input type="number" v-model="item.stock" min="0" required placeholder="0">
+              </td>
+              <td>
                 <button @click="removeRow(index)" class="btn-circle remove-btn" title="删除一行" :disabled="products.length <= 1">-</button>
               </td>
             </tr>
@@ -93,6 +97,7 @@ export default {
             categoryId: null,
             subCategory: null,
             price: 0,
+            stock: 0,
             theme: '',
             description: ''
           },
@@ -101,6 +106,7 @@ export default {
             categoryId: 'same',
             subCategory: 'same',
             price: 0,
+            stock: 0,
             theme: '',
             description: ''
           }
@@ -240,6 +246,7 @@ export default {
         categoryId: 'same',
         subCategory: 'same', // 因为一级分类是"同上"，所以二级分类也可以默认为"同上"
         price: 0,
+        stock: 0,
         theme: '',
         description: ''
       }
@@ -279,8 +286,8 @@ export default {
       // 验证所有必填字段
       for (let i = 0; i < this.products.length; i++) {
         const product = this.products[i]
-        if (!product.name || !this.getActualCategoryId(i) || !this.getActualSubCategory(i) || !product.price) {
-          this.error = `第 ${i + 1} 行商品信息不完整，请检查`
+        if (!product.name || !this.getActualCategoryId(i) || !this.getActualSubCategory(i) || !product.price || product.stock === undefined || product.stock < 0) {
+          this.error = `第 ${i + 1} 行商品信息不完整或库存值无效，请检查`
           return
         }
       }
@@ -297,6 +304,7 @@ export default {
             name: product.name,
             subCategory: actualSubCategory,
             price: product.price,
+            stock: product.stock,
             description: product.description,
             theme: product.theme
           }

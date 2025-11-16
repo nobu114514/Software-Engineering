@@ -47,6 +47,11 @@
         <p class="help-text">您也可以在下方的商品详情中插入更多图片</p>
       </div>
       <div class="form-group">
+        <label for="stock">商品库存</label>
+        <input type="number" id="stock" v-model="product.stock" min="0" step="1" required>
+        <p class="help-text">设置商品的初始库存数量</p>
+      </div>
+      <div class="form-group">
         <label>商品详情</label>
         <RichTextEditor v-model="product.description" label="" />
       </div>
@@ -73,6 +78,7 @@ export default {
         price: 0,
         imageUrl: '',
         description: '',
+        stock: 0,
         subCategory: null
       },
       isEditing: false,
@@ -141,7 +147,9 @@ export default {
       try {
         const response = await this.$axios.get(`http://localhost:8081/api/products/${id}`)
         // 正确访问嵌套在data字段中的商品数据
-        this.product = response.data.data || response.data
+        const productData = response.data.data || response.data
+        // 合并响应数据到现有product对象以保留stock等属性的响应式特性
+        this.product = Object.assign({}, this.product, productData)
         // 如果商品有二级分类，设置选中的分类
         if (this.product.subCategory && this.product.subCategory.category) {
           this.selectedCategoryId = this.product.subCategory.category.id
@@ -160,6 +168,7 @@ export default {
     },
     async saveProduct() {
       try {
+        console.log('Sending product data:', this.product); // 添加日志查看发送的数据
         if (this.isEditing) {
           await this.$axios.put(`http://localhost:8081/api/products/${this.product.id}`, this.product)
         } else {

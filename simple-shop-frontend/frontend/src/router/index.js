@@ -108,7 +108,7 @@ const router = createRouter({
 // 路由守卫，检查是否已登录
 router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
-  
+
   if (requiresAuth) {
     const record = to.matched.find(r => r.meta.role);
     // 检查是否需要卖家登录

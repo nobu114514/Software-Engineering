@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,8 +28,19 @@ public class BuyerController {
 
     @PostMapping("/product/{productId}")
     public ResponseEntity<?> createBuyer(@RequestBody Buyer buyer, @PathVariable Long productId, @RequestHeader(value = "X-Username", required = false) String username) {
+        // 解码URL编码的用户名
+        String decodedUsername = null;
+        try {
+            if (username != null) {
+                decodedUsername = URLDecoder.decode(username, "UTF-8");
+            }
+        } catch (Exception e) {
+            // 如果解码失败，使用原始用户名
+            decodedUsername = username;
+        }
+        
         // 验证用户是否已登录（简单实现，实际项目中应使用更安全的认证机制）
-        if (username == null || username.isEmpty()) {
+        if (decodedUsername == null || decodedUsername.isEmpty()) {
             // 返回未授权错误
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
@@ -67,7 +79,7 @@ public class BuyerController {
             }
             
             // 创建购买意向 - 现在会抛出具体的异常
-            Buyer created = buyerService.createBuyer(buyer, productId, username);
+            Buyer created = buyerService.createBuyer(buyer, productId, decodedUsername);
             
             // 清除循环引用，避免JSON序列化问题
             if (created.getProduct() != null) {

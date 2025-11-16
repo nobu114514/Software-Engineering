@@ -66,14 +66,14 @@ public class SubCategoryController {
         logger.info("Get subcategory by ID: {}", id);
         try {
             return subCategoryService.getSubCategoryById(id)
-                .map(subCategory -> {
-                    // 清除分类引用以避免循环依赖
-                    if (subCategory.getCategory() != null) {
-                        subCategory.setCategory(null);
-                    }
-                    return ResponseEntity.ok(subCategory);
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                    .map(subCategory -> {
+                        // 清除分类引用以避免循环依赖
+                        if (subCategory.getCategory() != null) {
+                            subCategory.setCategory(null);
+                        }
+                        return ResponseEntity.ok(subCategory);
+                    })
+                    .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (Exception e) {
             logger.error("Error getting subcategory by id", e);
             return ResponseEntity.status(500).build();
@@ -221,8 +221,8 @@ public class SubCategoryController {
         logger.info("Seller get subcategory by ID: {}", id);
         try {
             return subCategoryService.getSubCategoryDTOById(id)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+                    .map(ResponseEntity::ok)
+                    .orElseGet(() -> ResponseEntity.notFound().build());
         } catch (Exception e) {
             logger.error("Error getting subcategory by id for seller", e);
             return ResponseEntity.status(500).build();

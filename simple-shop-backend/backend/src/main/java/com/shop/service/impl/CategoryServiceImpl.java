@@ -71,7 +71,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .orElseThrow(() -> new RuntimeException("分类不存在: " + id));
         return convertToDTO(category);
     }
-    
+
     @Override
     public List<CategoryDTO> getAllCategoryDTOs() {
         List<Category> categories = categoryRepository.findAll();

@@ -226,12 +226,13 @@ export default {
       }
       
       try {
-        // 获取当前登录的用户名
+        // 获取当前登录的用户名并进行编码，确保符合HTTP请求头的ISO-8859-1编码要求
         const username = localStorage.getItem('customerUsername');
-        // 发送请求时携带用户名作为请求头
+        const encodedUsername = encodeURIComponent(username || '');
+        // 发送请求时携带编码后的用户名作为请求头
         await this.$axios.post(`http://localhost:8081/api/buyers/product/${this.product.id}`, this.buyer, {
           headers: {
-            'X-Username': username
+            'X-Username': encodedUsername
           }
         });
         this.buySuccess = true;

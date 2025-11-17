@@ -69,10 +69,20 @@ public class CustomerService {
         return customerRepository.findAll();
     }
     
+    // 获取全部客户列表（支持分页，不进行搜索）
+    public Page<Customer> getAllCustomersWithPagination(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return customerRepository.findByKeyword(null, pageable);
+    }
+    
     // 获取客户列表（支持分页和搜索）
     public Page<Customer> getCustomers(String keyword, int page, int size) {
+        System.out.println("Service received keyword: '" + keyword + "'");
         Pageable pageable = PageRequest.of(page, size);
-        return customerRepository.findByKeyword(keyword, pageable);
+        // 对搜索关键词进行trim处理
+        String searchKeyword = keyword != null ? keyword.trim() : null;
+        System.out.println("Service using searchKeyword: '" + searchKeyword + "'");
+        return customerRepository.findByKeyword(searchKeyword, pageable);
     }
     
     // 获取指定客户的订单记录（从buyers表中）

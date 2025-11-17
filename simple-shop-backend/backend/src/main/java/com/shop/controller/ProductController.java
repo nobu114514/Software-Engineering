@@ -44,6 +44,19 @@ public class ProductController {
         }
         return products;
     }
+    
+    // 获取所有上架商品
+    @GetMapping("/active-list")
+    public List<Product> getActiveProducts() {
+        List<Product> products = productService.getActiveProducts();
+        // 清除循环引用
+        for (Product product : products) {
+            if (product.getSubCategory() != null) {
+                product.getSubCategory().setCategory(null);
+            }
+        }
+        return products;
+    }
 
     @GetMapping("/sub-category/{subCategoryId}")
     public ResponseEntity<List<Product>> getProductsBySubCategory(@PathVariable Long subCategoryId) {
@@ -61,10 +74,40 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
     
+    // 获取指定子分类的上架商品
+    @GetMapping("/sub-category/{subCategoryId}/active")
+    public ResponseEntity<List<Product>> getActiveProductsBySubCategory(@PathVariable Long subCategoryId) {
+        // 验证二级分类是否存在
+        if (!subCategoryService.getSubCategoryById(subCategoryId).isPresent()) {
+            return ResponseEntity.notFound().build();
+        }
+        List<Product> products = productService.getActiveProductsBySubCategoryId(subCategoryId);
+        // 清除循环引用
+        for (Product product : products) {
+            if (product.getSubCategory() != null) {
+                product.getSubCategory().setCategory(null);
+            }
+        }
+        return ResponseEntity.ok(products);
+    }
+    
     // 添加通过一级分类ID获取商品的API端点
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<Product>> getProductsByCategory(@PathVariable Long categoryId) {
         List<Product> products = productService.getProductsByCategoryId(categoryId);
+        // 清除循环引用
+        for (Product product : products) {
+            if (product.getSubCategory() != null) {
+                product.getSubCategory().setCategory(null);
+            }
+        }
+        return ResponseEntity.ok(products);
+    }
+    
+    // 获取指定一级分类的上架商品
+    @GetMapping("/category/{categoryId}/active")
+    public ResponseEntity<List<Product>> getActiveProductsByCategory(@PathVariable Long categoryId) {
+        List<Product> products = productService.getActiveProductsByCategoryId(categoryId);
         // 清除循环引用
         for (Product product : products) {
             if (product.getSubCategory() != null) {

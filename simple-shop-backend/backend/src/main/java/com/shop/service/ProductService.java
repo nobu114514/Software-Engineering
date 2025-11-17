@@ -22,6 +22,11 @@ public class ProductService {
     public List<Product> getAllProducts() {
         return productRepository.findAllByOrderByCreatedAtDesc();
     }
+    
+    // 获取所有上架商品
+    public List<Product> getActiveProducts() {
+        return productRepository.findByIsActiveTrueOrderByCreatedAtDesc();
+    }
 
     public List<Product> getProductsBySubCategory(SubCategory subCategory) {
         return productRepository.findBySubCategoryAndIsActiveTrue(subCategory);
@@ -31,9 +36,19 @@ public class ProductService {
         return productRepository.findBySubCategoryId(subCategoryId);
     }
     
+    // 获取指定子分类的上架商品
+    public List<Product> getActiveProductsBySubCategoryId(Long subCategoryId) {
+        return productRepository.findBySubCategoryIdAndIsActiveTrue(subCategoryId);
+    }
+    
     // 添加通过一级分类ID获取商品的方法
     public List<Product> getProductsByCategoryId(Long categoryId) {
         return productRepository.findBySubCategoryCategoryId(categoryId);
+    }
+    
+    // 获取指定一级分类的上架商品
+    public List<Product> getActiveProductsByCategoryId(Long categoryId) {
+        return productRepository.findBySubCategoryCategoryIdAndIsActiveTrue(categoryId);
     }
 
     public Product createProduct(Product product) {

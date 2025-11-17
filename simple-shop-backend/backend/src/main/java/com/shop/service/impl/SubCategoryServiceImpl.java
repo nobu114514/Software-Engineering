@@ -19,7 +19,7 @@ public class SubCategoryServiceImpl implements SubCategoryService {
 
     @Autowired
     private SubCategoryRepository subCategoryRepository;
-    
+
     @Autowired
     private CategoryRepository categoryRepository;
 
@@ -54,7 +54,7 @@ public class SubCategoryServiceImpl implements SubCategoryService {
         Optional<SubCategory> existing = subCategoryRepository.findById(subCategory.getId());
         if (existing.isPresent() && (
                 !existing.get().getName().equals(subCategory.getName()) ||
-                !existing.get().getCategory().getId().equals(subCategory.getCategory().getId())) &&
+                        !existing.get().getCategory().getId().equals(subCategory.getCategory().getId())) &&
                 subCategoryRepository.existsByCategoryIdAndName(
                         subCategory.getCategory().getId(), subCategory.getName())) {
             throw new IllegalArgumentException("该分类下已存在同名二级分类");
@@ -72,12 +72,12 @@ public class SubCategoryServiceImpl implements SubCategoryService {
         // 获取分类
         Category category = categoryRepository.findById(subCategoryDTO.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("分类不存在: " + subCategoryDTO.getCategoryId()));
-        
+
         // 检查分类下是否已存在同名二级分类
         if (subCategoryRepository.existsByCategoryIdAndName(category.getId(), subCategoryDTO.getName())) {
             throw new IllegalArgumentException("该分类下已存在同名二级分类");
         }
-        
+
         SubCategory subCategory = new SubCategory();
         updateSubCategoryFromDTO(subCategory, subCategoryDTO, category);
         SubCategory savedSubCategory = subCategoryRepository.save(subCategory);
@@ -89,11 +89,11 @@ public class SubCategoryServiceImpl implements SubCategoryService {
         // 获取二级分类
         SubCategory subCategory = subCategoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("二级分类不存在: " + id));
-        
+
         // 获取分类
         Category category = categoryRepository.findById(subCategoryDTO.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("分类不存在: " + subCategoryDTO.getCategoryId()));
-        
+
         // 检查是否与其他同级二级分类重名
         if (!subCategory.getName().equals(subCategoryDTO.getName()) ||
                 !subCategory.getCategory().getId().equals(category.getId())) {
@@ -102,7 +102,7 @@ public class SubCategoryServiceImpl implements SubCategoryService {
                 throw new IllegalArgumentException("该分类下已存在同名二级分类");
             }
         }
-        
+
         updateSubCategoryFromDTO(subCategory, subCategoryDTO, category);
         SubCategory updatedSubCategory = subCategoryRepository.save(subCategory);
         return convertToDTO(updatedSubCategory);
@@ -113,7 +113,7 @@ public class SubCategoryServiceImpl implements SubCategoryService {
         return subCategoryRepository.findById(id)
                 .map(this::convertToDTO);
     }
-    
+
     @Override
     public List<SubCategoryDTO> getAllSubCategoryDTOs() {
         List<SubCategory> subCategories = subCategoryRepository.findAll();
@@ -121,7 +121,7 @@ public class SubCategoryServiceImpl implements SubCategoryService {
                 .map(this::convertToDTO)
                 .collect(java.util.stream.Collectors.toList());
     }
-    
+
     @Override
     public List<SubCategoryDTO> getSubCategoryDTOsByCategoryId(Long categoryId) {
         List<SubCategory> subCategories = subCategoryRepository.findByCategoryIdOrderBySortOrderAsc(categoryId);

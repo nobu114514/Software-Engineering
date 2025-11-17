@@ -41,7 +41,7 @@
                             class="btn"
                             :class="{ 'btn-secondary': product.active, 'btn-success': !product.active }"
                             @click="toggleActive(product)"
-                            :disabled="product.active && getActiveProductsCount() <= 1">
+                            :disabled="false">
                         {{ product.active ? '下架' : '上架' }}
                     </button>
                 </td>
@@ -90,32 +90,16 @@
 
         async toggleActive(product) {
           try {
-            if (product.isActive) {
-              // 当前是“在售”，执行下架
+            if (product.active) {
+              // 当前是"在售"，执行下架
               await this.$axios.put(`/products/${product.id}/deactivate`)
+              // 设置本地存储标志，指示有商品状态已变更
+              localStorage.setItem('productStatusChanged', 'true')
             } else {
-              // 当前是“已下架”，执行上架
-              // 先检查是否有其他在售商品
-              const activeProducts = this.products.filter(p => p.isActive && p.id !== product.id)
-
-              // 先上架当前商品
+              // 当前是"已下架"，执行上架
               await this.$axios.put(`/products/${product.id}/activate`)
-
-              // 再将其他所有在售商品下架
-              if (activeProducts.length > 0) {
-                // 显示提示信息
-                this.error = `已自动将 ${activeProducts.length} 个商品下架，确保只有一个在售商品`
-
-                // 延迟清除提示信息
-                setTimeout(() => {
-                  this.error = ''
-                }, 3000)
-
-                // 逐个下架其他商品
-                for (const p of activeProducts) {
-                  await this.$axios.put(`/products/${p.id}/deactivate`)
-                }
-              }
+              // 设置本地存储标志，指示有商品状态已变更
+              localStorage.setItem('productStatusChanged', 'true')
             }
 
             // 刷新商品列表

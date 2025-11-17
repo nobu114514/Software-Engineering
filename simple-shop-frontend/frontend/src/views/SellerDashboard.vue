@@ -5,6 +5,7 @@
     <div class="dashboard-menu">
       <a href="/seller/product/new" class="btn">发布新商品</a>
       <a href="/seller/products" class="btn">商品历史</a>
+      <a href="/seller/stock-logs" class="btn">库存日志</a>
       <a href="/seller/categories" class="btn">分类管理</a>
       <a href="/seller/sub-categories" class="btn">二级分类管理</a>
       <a href="/seller/buyers" class="btn">购买意向列表</a>
@@ -25,6 +26,7 @@
         <div v-for="product in activeProducts" :key="product.id" class="card product-card">
           <h3>{{ product.name }}</h3>
           <p>价格: ¥{{ product.price.toFixed(2) }}</p>
+          <p>库存: {{ product.stock }} 件</p>
           <p>状态: {{ product.frozen ? '交易中（已冻结）' : '可购买' }}</p>
           
           <div class="actions">

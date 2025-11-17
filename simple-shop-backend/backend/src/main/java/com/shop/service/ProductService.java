@@ -4,8 +4,14 @@ import com.shop.model.Product;
 import com.shop.model.SubCategory;
 import com.shop.repository.ProductRepository;
 import com.shop.repository.SubCategoryRepository;
+import com.shop.repository.BuyerRepository;
+import com.shop.repository.StockLogRepository;
 import com.shop.service.StockLogService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +29,12 @@ public class ProductService {
     
     @Autowired
     private SubCategoryRepository subCategoryRepository;
+    
+    @Autowired
+    private BuyerRepository buyerRepository;
+    
+    @Autowired
+    private StockLogRepository stockLogRepository;
 
     public Optional<Product> getActiveProduct() {
         return productRepository.findByIsActiveTrue();
@@ -60,10 +72,45 @@ public class ProductService {
         return productRepository.findBySubCategoryCategoryIdAndIsActiveTrue(categoryId);
     }
 
+    // 搜索商品（支持分页和排序）
+    public Page<Product> searchProducts(String keyword, int page, int size, String sortBy, String sortDir) {
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return productRepository.findAll(pageable);
+        }
+        
+        return productRepository.searchActiveProducts(keyword.trim(), pageable);
+    }
+
+    // 按一级分类搜索商品
+    public Page<Product> searchProductsByCategory(Long categoryId, String keyword, int page, int size, String sortBy, String sortDir) {
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return productRepository.findAll(pageable);
+        }
+        
+        return productRepository.searchActiveProductsByCategory(categoryId, keyword.trim(), pageable);
+    }
+
+    // 按二级分类搜索商品
+    public Page<Product> searchProductsBySubCategory(Long subCategoryId, String keyword, int page, int size, String sortBy, String sortDir) {
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return productRepository.findAll(pageable);
+        }
+        
+        return productRepository.searchActiveProductsBySubCategory(subCategoryId, keyword.trim(), pageable);
+    }
+
     public Product createProduct(Product product) {
         // 允许多个商品同时激活，移除限制逻辑
         product.setActive(true);
-        product.setFrozen(false);
         return productRepository.save(product);
     }
 
@@ -117,17 +164,6 @@ public class ProductService {
             .orElseThrow(() -> new IllegalArgumentException("Product not found with id: " + product.getId()));
     }
 
-    public boolean freezeProduct(Long id, boolean freeze) {
-        Optional<Product> productOpt = productRepository.findById(id);
-        if (productOpt.isPresent()) {
-            Product product = productOpt.get();
-            product.setFrozen(freeze);
-            productRepository.save(product);
-            return true;
-        }
-        return false;
-    }
-
     public boolean deactivateProduct(Long id) {
         Optional<Product> productOpt = productRepository.findById(id);
         if (productOpt.isPresent()) {
@@ -169,5 +205,33 @@ public class ProductService {
     public Product decreaseStock(Long productId, int quantity) {
         Optional<Product> productOptional = productRepository.findById(productId);
         return productOptional.map(product -> decreaseStock(product, quantity)).orElse(null);
+    }
+
+    // 增加销量
+    @Transactional
+    public Product increaseSalesCount(Long productId, int quantity) {
+        Optional<Product> productOptional = productRepository.findById(productId);
+        if (productOptional.isPresent()) {
+            Product product = productOptional.get();
+            int currentSales = product.getSalesCount();
+            product.setSalesCount(currentSales + quantity);
+            return productRepository.save(product);
+        }
+        return null;
+    }
+
+    @Transactional
+    public boolean deleteProduct(Long id) {
+        Optional<Product> productOpt = productRepository.findById(id);
+        if (productOpt.isPresent()) {
+            // 先删除相关的库存日志记录
+            stockLogRepository.deleteByProductId(id);
+            // 再删除相关的购买意向记录
+            buyerRepository.deleteByProductId(id);
+            // 最后删除商品
+            productRepository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }

@@ -46,6 +46,11 @@ public class BuyerService {
             throw new BuyerServiceException("该商品已下架，无法购买");
         }
         
+        // 检查库存，只有库存大于0时才允许购买
+        if (product.getStock() <= 0) {
+            throw new BuyerServiceException("该商品已售罄，无法购买");
+        }
+        
         // 设置商品信息
         buyer.setProduct(product);
         
@@ -71,15 +76,9 @@ public class BuyerService {
         buyer.setCustomerId(customerId);
         
         try {
-            // 同时冻结商品
-            productService.freezeProduct(productId, true);
-            // 保存购买意向
+            // 直接保存购买意向，不再冻结商品
             return buyerRepository.save(buyer);
         } catch (Exception e) {
-            // 保存失败时，解冻商品
-            try {
-                productService.freezeProduct(productId, false);
-            } catch (Exception ignore) {}
             throw new BuyerServiceException("创建购买意向失败：" + e.getMessage());
         }
     }
@@ -102,10 +101,10 @@ public class BuyerService {
             if (success) {
                 // 交易成功，减少库存但不自动下架商品
                 productService.decreaseStock(product.getId(), 1);
-            } else {
-                // 交易失败，商品解冻
-                productService.freezeProduct(product.getId(), false);
+                // 同时增加销量
+                productService.increaseSalesCount(product.getId(), 1);
             }
+            // 交易失败时不再需要解冻商品，因为商品不再被冻结
             
             buyerRepository.save(buyer);
             return true;

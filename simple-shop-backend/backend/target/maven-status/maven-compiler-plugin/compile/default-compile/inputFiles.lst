@@ -1,6 +1,9 @@
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\controller\BuyerController.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\service\SubCategoryService.java
+E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\service\StockLogService.java
+E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\controller\StockLogController.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\service\DataInitializerService.java
+E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\repository\StockLogRepository.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\model\Seller.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\SimpleShopApplication.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\model\Product.java
@@ -9,6 +12,7 @@ E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\sho
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\service\CustomerService.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\service\SellerService.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\controller\FileController.java
+E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\dto\StockLogDTO.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\service\impl\SubCategoryServiceImpl.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\repository\SellerRepository.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\controller\SubCategoryController.java
@@ -23,6 +27,7 @@ E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\sho
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\model\Buyer.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\service\ProductService.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\repository\CustomerRepository.java
+E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\model\StockLog.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\dto\SubCategoryDTO.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\model\Customer.java
 E:\Software-Engineering-kelong\simple-shop-backend\backend\src\main\java\com\shop\service\BuyerService.java

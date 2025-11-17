@@ -46,6 +46,14 @@
                             :disabled="false">
                         {{ product.active ? '下架' : '上架' }}
                     </button>
+
+                    <!-- 删除按钮 -->
+                    <button
+                            class="btn btn-danger"
+                            @click="confirmDelete(product)"
+                            :disabled="false">
+                        删除
+                    </button>
                 </td>
             </tr>
             </tbody>
@@ -116,6 +124,27 @@
           if (!dateString) return ''
           const date = new Date(dateString)
           return date.toLocaleString()
+        },
+
+        // 确认删除商品
+        confirmDelete(product) {
+          if (confirm(`确定要删除商品"${product.name}"吗？此操作不可恢复。`)) {
+            this.deleteProduct(product.id)
+          }
+        },
+
+        // 删除商品
+        async deleteProduct(productId) {
+          try {
+            await this.$axios.delete(`/products/${productId}`)
+            // 设置本地存储标志，指示有商品已删除
+            localStorage.setItem('productStatusChanged', 'true')
+            // 刷新商品列表
+            this.fetchProducts()
+          } catch (err) {
+            this.error = '删除商品失败，请重试'
+            console.error(err)
+          }
         }
       }
     }
@@ -190,6 +219,15 @@
     /* 上架按钮 - 绿色 */
     .btn-success {
       background: #28a745;
+    }
+
+    /* 删除按钮 - 红色 */
+    .btn-danger {
+      background: #dc3545;
+    }
+
+    .btn-danger:hover {
+      background: #c82333;
     }
 
     .btn:disabled {

@@ -1,5 +1,6 @@
 package com.shop.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -26,6 +27,7 @@ public class Category {
     private LocalDateTime updatedAt;
     
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"category"})
     private Set<SubCategory> subCategories;
 
     // Getters and Setters

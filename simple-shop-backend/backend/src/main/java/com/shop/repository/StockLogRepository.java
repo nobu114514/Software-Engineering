@@ -2,9 +2,11 @@ package com.shop.repository;
 
 import com.shop.model.StockLog;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -24,4 +26,10 @@ public interface StockLogRepository extends JpaRepository<StockLog, Long> {
     // 根据商品名称搜索库存日志，并按时间倒序排列
     @Query("SELECT sl FROM StockLog sl JOIN FETCH sl.product WHERE LOWER(sl.product.name) LIKE LOWER(CONCAT('%', :productName, '%')) ORDER BY sl.createdAt DESC")
     List<StockLog> findByProductNameContainingOrderByCreatedAtDesc(@Param("productName") String productName);
+    
+    // 根据商品ID删除库存日志
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM StockLog sl WHERE sl.product.id = ?1")
+    void deleteByProductId(Long productId);
 }

@@ -4,6 +4,7 @@ import com.shop.model.Product;
 import com.shop.service.ProductService;
 import com.shop.service.SubCategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,7 +34,7 @@ public class ProductController {
         .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @GetMapping
+    @GetMapping("/all")
     public List<Product> getAllProducts() {
         List<Product> products = productService.getAllProducts();
         // 清除循环引用
@@ -117,6 +118,47 @@ public class ProductController {
         return ResponseEntity.ok(products);
     }
 
+    // 搜索商品（支持分页和排序）
+    @GetMapping("/search")
+    public ResponseEntity<Page<Product>> searchProducts(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        
+        Page<Product> products = productService.searchProducts(keyword, page, size, sortBy, sortDir);
+        return ResponseEntity.ok(products);
+    }
+
+    // 按一级分类搜索商品
+    @GetMapping("/category/{categoryId}/search")
+    public ResponseEntity<Page<Product>> searchProductsByCategory(
+            @PathVariable Long categoryId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        
+        Page<Product> products = productService.searchProductsByCategory(categoryId, keyword, page, size, sortBy, sortDir);
+        return ResponseEntity.ok(products);
+    }
+
+    // 按二级分类搜索商品
+    @GetMapping("/sub-category/{subCategoryId}/search")
+    public ResponseEntity<Page<Product>> searchProductsBySubCategory(
+            @PathVariable Long subCategoryId,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        
+        Page<Product> products = productService.searchProductsBySubCategory(subCategoryId, keyword, page, size, sortBy, sortDir);
+        return ResponseEntity.ok(products);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProductById(@PathVariable Long id) {
         Optional<Product> product = productService.getProductById(id);
@@ -157,12 +199,6 @@ public class ProductController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/{id}/freeze")
-    public ResponseEntity<Boolean> freezeProduct(@PathVariable Long id, @RequestParam boolean freeze) {
-        boolean success = productService.freezeProduct(id, freeze);
-        return success ? ResponseEntity.ok(true) : ResponseEntity.notFound().build();
-    }
-
     @PutMapping("/{id}/deactivate")
     public ResponseEntity<Boolean> deactivateProduct(@PathVariable Long id) {
         boolean success = productService.deactivateProduct(id);
@@ -198,5 +234,11 @@ public class ProductController {
             return ResponseEntity.ok(updatedProduct);
         }
         return ResponseEntity.badRequest().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        boolean success = productService.deleteProduct(id);
+        return success ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 }

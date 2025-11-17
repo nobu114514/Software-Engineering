@@ -114,3 +114,22 @@ out/
 # 文件管理器生成文件
 Desktop.ini
 .Trash-*
+
+# 后端 Java 项目：忽略编译产物和 IDE 缓存
+target/                  # Java 编译产物目录（包含 .class 文件）
+!.mvn/wrapper/maven-wrapper.jar  # 例外：保留 maven 包装器（若有）
+*.class                  # 单独忽略所有 .class 二进制文件
+.idea/                   # IDEA 配置文件夹
+*.iml                    # IDEA 项目文件
+*.iws                    # IDEA 缓存文件
+
+# 前端 Node.js 项目：忽略依赖和缓存
+node_modules/            # 第三方依赖（之前已加，确认存在）
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp/
+.pnp.js
+*.cache/                 # 所有缓存文件夹
+node_modules/.cache/     # 单独忽略 ESLint 等缓存
+dist/                    # 前端打包产物

@@ -125,11 +125,7 @@ target/                  # Java 编译产物目录（包含 .class 文件）
 
 # 前端 Node.js 项目：忽略依赖和缓存
 node_modules/            # 第三方依赖（之前已加，确认存在）
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 .pnp/
-.pnp.js
 *.cache/                 # 所有缓存文件夹
 node_modules/.cache/     # 单独忽略 ESLint 等缓存
 dist/                    # 前端打包产物

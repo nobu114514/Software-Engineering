@@ -27,6 +27,8 @@ public class Product {
     
     private LocalDateTime updatedAt;
     
+    private int stock; // 库存数量
+    
     @ManyToOne
     @JoinColumn(name = "sub_category_id")
     private SubCategory subCategory;
@@ -104,6 +106,14 @@ public class Product {
         this.updatedAt = updatedAt;
     }
     
+    public int getStock() {
+        return stock;
+    }
+    
+    public void setStock(int stock) {
+        this.stock = stock;
+    }
+    
     public SubCategory getSubCategory() {
         return subCategory;
     }
@@ -118,6 +128,7 @@ public class Product {
         updatedAt = LocalDateTime.now();
         isActive = true;
         isFrozen = false;
+        stock = 0;
     }
 
     @PreUpdate

@@ -13,6 +13,7 @@ import CustomerOrders from '../views/CustomerOrders.vue'
 import ProductBatchForm from '../views/ProductBatchForm.vue'
 import SellerCategories from '../views/SellerCategories.vue'
 import SellerSubCategories from '../views/SellerSubCategories.vue'
+import StockLogs from '../views/StockLogs.vue'
 
 const routes = [
   {
@@ -92,10 +93,16 @@ const routes = [
     component: SellerCategories,
     meta: { requiresAuth: true, role: 'seller' }
   },
-  {
+  { 
     path: '/seller/sub-categories',
     name: 'sellerSubCategories',
     component: SellerSubCategories,
+    meta: { requiresAuth: true, role: 'seller' }
+  },
+  { 
+    path: '/seller/stock-logs',
+    name: 'stockLogs',
+    component: StockLogs,
     meta: { requiresAuth: true, role: 'seller' }
   },
   ]

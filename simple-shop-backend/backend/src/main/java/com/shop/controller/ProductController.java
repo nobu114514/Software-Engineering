@@ -142,6 +142,8 @@ public class ProductController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product product) {
+        System.out.println("Received product for update: " + product);
+        System.out.println("Stock value: " + product.getStock());
         return productService.getProductById(id)
                 .map(existingProduct -> {
                     product.setId(id);
@@ -183,5 +185,18 @@ public class ProductController {
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @PutMapping("/{id}/stock/decrease")
+    public ResponseEntity<Product> decreaseProductStock(@PathVariable Long id, @RequestParam int quantity) {
+        Product updatedProduct = productService.decreaseStock(id, quantity);
+        if (updatedProduct != null) {
+            // 清除循环引用
+            if (updatedProduct.getSubCategory() != null) {
+                updatedProduct.getSubCategory().setCategory(null);
+            }
+            return ResponseEntity.ok(updatedProduct);
+        }
+        return ResponseEntity.badRequest().build();
     }
 }

@@ -16,6 +16,7 @@
                 <th>ID</th>
                 <th>名称</th>
                 <th>价格</th>
+                <th>库存</th>
                 <th>状态</th>
                 <th>创建时间</th>
                 <th>操作</th>
@@ -26,6 +27,7 @@
                 <td>{{ product.id }}</td>
                 <td>{{ product.name }}</td>
                 <td>¥{{ product.price.toFixed(2) }}</td>
+                <td>{{ product.stock }} 件</td>
                 <td>
                     <span v-if="product.active" class="status-active">在售</span>
                     <span v-else class="status-inactive">已下架</span>

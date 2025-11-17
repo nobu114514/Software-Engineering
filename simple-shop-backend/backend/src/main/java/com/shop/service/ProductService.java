@@ -109,9 +109,22 @@ public class ProductService {
     }
 
     public Product createProduct(Product product) {
-        // 允许多个商品同时激活，移除限制逻辑
         product.setActive(true);
-        return productRepository.save(product);
+        Product savedProduct = productRepository.save(product);
+        
+        // 记录库存日志 - 商品创建时的初始库存
+        if (savedProduct.getStock() > 0) {
+            stockLogService.createStockLog(
+                savedProduct, 
+                savedProduct.getStock(), 
+                0, // 变更前库存为0
+                savedProduct.getStock(), // 变更后库存
+                "CREATE", 
+                "商品创建时设置初始库存"
+            );
+        }
+        
+        return savedProduct;
     }
 
     public Optional<Product> getProductById(Long id) {

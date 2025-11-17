@@ -129,7 +129,7 @@ public class Product {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         isActive = true;
-        stock = 0;
+        // 移除 stock = 0; 让库存使用前端传递的值
         salesCount = 0;
     }
 

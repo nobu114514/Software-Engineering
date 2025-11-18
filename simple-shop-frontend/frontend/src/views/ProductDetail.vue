@@ -67,19 +67,16 @@
             <span v-else class="stock-value stock-out">无货</span>
           </div>
 
-          <!-- 注意：这里用的是 product.frozen（后端返回的字段名），不是 isFrozen -->
-          <div v-if="product.frozen" class="alert alert-danger">
-            该商品正在交易中，请稍后再试。
-          </div>
-          <div v-else-if="product.stock <= 0" class="alert alert-danger">
+          <!-- 只有库存为0时才显示缺货提示 -->
+          <div v-if="product.stock <= 0" class="alert alert-danger">
             该商品已售罄，请稍后再试。
           </div>
 
-          <!-- 只有商品未冻结且有库存，才显示购买按钮 -->
+          <!-- 只有商品有库存，才显示购买按钮 -->
           <button
             class="buy-btn"
             @click="handleBuyClick"
-            v-if="!product.frozen && product.stock > 0"
+            v-if="product.stock > 0"
           >
             我要购买
           </button>

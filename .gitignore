@@ -1,0 +1,131 @@
+# 依赖目录
+node_modules/
+simple-shop-frontend/node_modules/
+simple-shop-frontend/frontend/node_modules/
+simple-shop-backend/node_modules/
+**/node_modules/
+/.pnp
+.pnp.js
+
+# 生产环境构建输出
+dist/
+dist-ssr/
+*.local
+
+# 日志文件
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 编辑器目录和文件
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# Maven构建输出
+target/
+*.jar
+*.war
+
+# Gradle构建输出
+build/
+.gradle/
+gradle-wrapper.jar
+
+# 数据库相关
+*.sql
+*.sql.gz
+*.db
+*.sqlite
+
+# 测试覆盖率
+coverage/
+*.lcov
+.nyc_output
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+
+# OS生成的文件
+Thumbs.db
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+
+# IDE配置文件
+*.iml
+*.ipr
+*.iws
+
+# 上传目录
+uploads/
+
+# 项目特定文件
+docker-compose.override.yml
+
+# Windows批处理文件备份
+*.bak
+
+# 运行时数据
+*.pid
+*.seed
+*.pid.lock
+
+# 前端构建更全面覆盖
+*.tsbuildinfo
+
+# 部署相关文件
+.env.build
+.env.deploy
+
+# 文档编译输出
+_site/
+.jekyll-cache/
+
+# 可能的其他构建目录
+builds/
+out/
+
+# 历史记录文件
+.history/
+
+# 文件管理器生成文件
+Desktop.ini
+.Trash-*
+
+# 后端 Java 项目：忽略编译产物和 IDE 缓存
+target/                  # Java 编译产物目录（包含 .class 文件）
+!.mvn/wrapper/maven-wrapper.jar  # 例外：保留 maven 包装器（若有）
+*.class                  # 单独忽略所有 .class 二进制文件
+.idea/                   # IDEA 配置文件夹
+*.iml                    # IDEA 项目文件
+*.iws                    # IDEA 缓存文件
+
+# 前端 Node.js 项目：忽略依赖和缓存
+node_modules/            # 第三方依赖（之前已加，确认存在）
+.pnp/
+*.cache/                 # 所有缓存文件夹
+node_modules/.cache/     # 单独忽略 ESLint 等缓存
+dist/                    # 前端打包产物

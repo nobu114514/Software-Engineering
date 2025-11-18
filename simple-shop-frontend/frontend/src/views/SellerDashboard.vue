@@ -27,16 +27,16 @@
           <h3>{{ product.name }}</h3>
           <p>价格: ¥{{ product.price.toFixed(2) }}</p>
           <p>库存: {{ product.stock }} 件</p>
-          <p>状态: {{ product.frozen ? '交易中（已冻结）' : '可购买' }}</p>
+          <p>状态: {{ product.stock > 0 ? '可购买' : '已售罄' }}</p>
           
           <div class="actions">
-            <button 
-              class="btn" 
-              @click="toggleFreeze(product.id)"
-              :disabled="!product">
-              {{ product.frozen ? '解除冻结' : '冻结商品' }}
-            </button>
             <a :href="'/seller/product/new?id=' + product.id" class="btn">编辑商品</a>
+            <button 
+              class="btn btn-danger" 
+              @click="confirmDelete(product)"
+              :disabled="!product">
+              删除商品
+            </button>
           </div>
         </div>
       </div>
@@ -65,10 +65,9 @@ export default {
     async fetchActiveProducts() {
       try {
         this.loading = true
-        const response = await this.$axios.get('/products')
-        // 筛选出激活状态的商品
-        this.activeProducts = Array.isArray(response.data) ? 
-          response.data.filter(product => product.active) : []
+        const response = await this.$axios.get('/products/active-list')
+        // active-list端点已经返回激活状态的商品，不需要再次筛选
+        this.activeProducts = Array.isArray(response.data) ? response.data : []
         this.error = ''
       } catch (err) {
         this.error = '获取商品信息失败'
@@ -77,23 +76,24 @@ export default {
         this.loading = false
       }
     },
-    async toggleFreeze(productId) {
+
+    // 确认删除商品
+    confirmDelete(product) {
+      if (confirm(`确定要删除商品"${product.name}"吗？此操作不可恢复。`)) {
+        this.deleteProduct(product.id)
+      }
+    },
+
+    // 删除商品
+    async deleteProduct(productId) {
       try {
-        // 找到要操作的商品
-        const product = this.activeProducts.find(p => p.id === productId)
-        if (!product) return
-        
-        // 修复：添加 /api 前缀 + 字段名改为 frozen
-        await this.$axios.put(`/products/${productId}/freeze`, null, {
-          params: { freeze: !product.frozen }
-        })
-        
-        // 更新商品状态
-        product.frozen = !product.frozen
-        // （可选优化）清空之前的错误提示
+        await this.$axios.delete(`/products/${productId}`)
+        // 刷新商品列表
+        this.fetchActiveProducts()
+        // 清空之前的错误提示
         this.error = ''
       } catch (err) {
-        this.error = '操作失败，请重试'
+        this.error = '删除商品失败，请重试'
         console.error(err)
       }
     }
@@ -165,6 +165,14 @@ export default {
 
 .btn:hover {
   background-color: #0056b3;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
 }
 
 /* 响应式设计 */

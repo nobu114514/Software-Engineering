@@ -6,28 +6,76 @@
       {{ error }}
     </div>
 
-    <!-- 分类筛选区域 -->
-    <div class="filter-section card">
-      <h3>商品分类筛选</h3>
-      <div class="filter-form">
-        <div class="filter-group">
-          <label for="category">一级分类</label>
-          <select id="category" v-model="selectedCategoryId">
-            <option value="">全部分类</option>
-            <option v-for="category in categories" :key="category.id" :value="category.id">
-              {{ category.name }}
-            </option>
-          </select>
+    <!-- 分类按钮区域 -->
+    <div class="category-buttons-section card">
+      <h3>商品分类</h3>
+      <!-- 一级分类按钮 -->
+      <div class="category-buttons">
+        <button 
+          class="category-btn" 
+          :class="{ active: selectedCategoryId === '' }"
+          @click="selectCategory('')">
+          全部分类
+        </button>
+        <button 
+          v-for="category in categories" 
+          :key="category.id" 
+          class="category-btn"
+          :class="{ active: selectedCategoryId === category.id }"
+          @click="selectCategory(category.id)">
+          {{ category.name }}
+        </button>
+      </div>
+      
+      <!-- 二级分类按钮 - 只在选择了一级分类时显示 -->
+      <div class="sub-category-section" v-if="selectedCategoryId && subCategories.length > 0">
+        <h4>子分类</h4>
+        <div class="sub-category-buttons">
+          <button 
+            class="sub-category-btn" 
+            :class="{ active: selectedSubCategoryId === '' }"
+            @click="selectSubCategory('')">
+            全部子分类
+          </button>
+          <button 
+            v-for="subCategory in subCategories" 
+            :key="subCategory.id" 
+            class="sub-category-btn"
+            :class="{ active: selectedSubCategoryId === subCategory.id }"
+            @click="selectSubCategory(subCategory.id)">
+            {{ subCategory.name }}
+          </button>
         </div>
-        <div class="filter-group">
-          <label for="subCategory">二级分类</label>
-          <select id="subCategory" v-model="selectedSubCategoryId">
-            <option value="">全部子分类</option>
-            <option v-for="subCategory in subCategories" :key="subCategory.id" :value="subCategory.id">
-              {{ subCategory.name }}
-            </option>
-          </select>
-        </div>
+      </div>
+    </div>
+
+    <!-- 搜索和排序区域 -->
+    <div class="search-sort-section card">
+      <div class="search-container">
+        <input 
+          type="text" 
+          v-model="searchKeyword" 
+          @input="onSearchInput"
+          placeholder="请输入商品名称或关键字搜索"
+          class="search-input"
+        >
+        <button @click="performSearch" class="btn search-btn">搜索</button>
+      </div>
+      
+      <div class="sort-container">
+        <label>排序方式：</label>
+        <select v-model="sortBy" @change="performSearch" class="sort-select">
+          <option value="createdAt">上架时间</option>
+          <option value="price">价格</option>
+          <option value="salesCount">销量</option>
+        </select>
+        <button 
+          @click="toggleSortDirection" 
+          class="btn btn-secondary sort-direction-btn"
+          :title="sortDirection === 'desc' ? '降序' : '升序'"
+        >
+          {{ sortDirection === 'desc' ? '↓' : '↑' }}
+        </button>
       </div>
     </div>
 
@@ -64,16 +112,11 @@
             </small>
           </div>
 
-          <!-- 注意：这里用的是 product.frozen（后端返回的字段名），不是 isFrozen -->
-          <div v-if="product.frozen" class="alert alert-danger">
-            该商品正在交易中，请稍后再试。
-          </div>
-
-          <!-- 只有商品未冻结且有库存，才显示购买按钮 -->
+          <!-- 只有商品有库存，才显示购买按钮 -->
           <button
             class="btn"
             @click="handleBuyClick(product)"
-            v-if="!product.frozen && product.stock > 0">
+            v-if="product.stock > 0">
             我要购买
           </button>
         </div>
@@ -81,7 +124,30 @@
 
       <!-- 如果商品列表为空，显示提示 -->
       <div v-else class="alert alert-info">
-        当前没有可购买的商品。
+        {{ searchKeyword ? '未找到匹配的商品' : '当前没有可购买的商品。' }}
+      </div>
+
+      <!-- 分页组件 -->
+      <div class="pagination" v-if="totalPages > 1">
+        <button 
+          @click="changePage(currentPage - 1)" 
+          :disabled="currentPage === 0"
+          class="btn btn-secondary"
+        >
+          上一页
+        </button>
+        
+        <span class="page-info">
+          第 {{ currentPage + 1 }} 页，共 {{ totalPages }} 页 (总计 {{ totalElements }} 条记录)
+        </span>
+        
+        <button 
+          @click="changePage(currentPage + 1)" 
+          :disabled="currentPage >= totalPages - 1"
+          class="btn btn-secondary"
+        >
+          下一页
+        </button>
       </div>
     </div>
 
@@ -140,7 +206,17 @@ export default {
         address: '',
         notes: ''
       },
-      buySuccess: false
+      buySuccess: false,
+      // 搜索相关
+      searchKeyword: '',
+      // 排序相关
+      sortBy: 'createdAt',
+      sortDirection: 'desc',
+      // 分页相关
+      currentPage: 0,
+      pageSize: 20,
+      totalPages: 0,
+      totalElements: 0
     };
   },
   created() {
@@ -149,18 +225,36 @@ export default {
     this.fetchProducts();
   },
   watch: {
-    // 监听分类变化，加载对应的二级分类
+    // 监听分类变化，重新获取商品
     selectedCategoryId(newVal) {
       this.selectedSubCategoryId = ''; // 重置二级分类选择
       this.loadSubCategories(newVal);
+      this.currentPage = 0; // 重置页码
       this.fetchProducts(); // 重新获取商品
     },
     // 监听二级分类变化，重新获取商品
     selectedSubCategoryId() {
+      this.currentPage = 0; // 重置页码
+      this.fetchProducts();
+    },
+    // 监听排序方式变化
+    sortBy() {
+      this.currentPage = 0; // 重置页码
+      this.fetchProducts();
+    },
+    // 监听排序方向变化
+    sortDirection() {
+      this.currentPage = 0; // 重置页码
       this.fetchProducts();
     }
   },
   methods: {
+    selectCategory(categoryId) {
+      this.selectedCategoryId = categoryId;
+    },
+    selectSubCategory(subCategoryId) {
+      this.selectedSubCategoryId = subCategoryId;
+    },
     async fetchCategories() {
       try {
         const response = await axios.get('http://localhost:8081/api/categories/active');
@@ -189,27 +283,52 @@ export default {
     async fetchProducts() {
       try {
         this.loading = true;
-        let url = 'http://localhost:8081/api/products/active-list';
         
-        // 根据选择的分类构建请求URL
-        if (this.selectedSubCategoryId) {
-          // 如果选择了二级分类，使用二级分类查询接口
-          url = `http://localhost:8081/api/products/sub-category/${this.selectedSubCategoryId}/active`;
-        } else if (this.selectedCategoryId) {
-          // 如果只选择了一级分类，使用一级分类查询接口
-          url = `http://localhost:8081/api/products/category/${this.selectedCategoryId}/active`;
+        // 构建搜索API的URL - 无论是否有搜索关键字都使用搜索API以支持排序
+        let url = 'http://localhost:8081/api/products/search';
+        let params = {
+          page: this.currentPage,
+          size: this.pageSize,
+          sortBy: this.sortBy,
+          sortDir: this.sortDirection
+        };
+        
+        // 如果有搜索关键字，添加到参数中
+        if (this.searchKeyword && this.searchKeyword.trim()) {
+          params.keyword = this.searchKeyword.trim();
         }
         
-        const response = await axios.get(url);
-        // 确保返回的是数组，考虑data字段嵌套结构
-        const data = response.data.data || response.data;
-        const productsArray = Array.isArray(data) ? data : [data].filter(Boolean);
-        // 新端点已确保只返回激活状态的商品
-        this.products = productsArray;
+        // 根据分类选择不同的搜索API端点
+        if (this.selectedSubCategoryId) {
+          url = `http://localhost:8081/api/products/sub-category/${this.selectedSubCategoryId}/search`;
+        } else if (this.selectedCategoryId) {
+          url = `http://localhost:8081/api/products/category/${this.selectedCategoryId}/search`;
+        }
+        
+        const response = await axios.get(url, { params });
+        
+        // 处理分页响应
+        if (response.data && typeof response.data === 'object' && response.data.content) {
+          // 这是分页响应
+          this.products = response.data.content;
+          this.totalPages = response.data.totalPages;
+          this.totalElements = response.data.totalElements;
+          this.currentPage = response.data.number;
+        } else {
+          // 兼容旧的列表响应
+          const data = response.data.data || response.data;
+          const productsArray = Array.isArray(data) ? data : [data].filter(Boolean);
+          this.products = productsArray;
+          this.totalPages = 1;
+          this.totalElements = productsArray.length;
+          this.currentPage = 0;
+        }
       } catch (error) {
         console.error('获取商品信息失败:', error);
         this.error = '获取商品信息失败，请稍后重试。';
         this.products = [];
+        this.totalPages = 0;
+        this.totalElements = 0;
       } finally {
         this.loading = false;
       }
@@ -256,6 +375,29 @@ export default {
         this.error = '提交购买意向失败'
         console.error(err)
       }
+    },
+    // 搜索相关方法
+    onSearchInput() {
+      // 防抖处理，避免频繁请求
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = setTimeout(() => {
+        this.performSearch();
+      }, 500);
+    },
+    performSearch() {
+      this.currentPage = 0; // 重置到第一页
+      this.fetchProducts();
+    },
+    // 排序相关方法
+    toggleSortDirection() {
+      this.sortDirection = this.sortDirection === 'desc' ? 'asc' : 'desc';
+    },
+    // 分页相关方法
+    changePage(newPage) {
+      if (newPage >= 0 && newPage < this.totalPages) {
+        this.currentPage = newPage;
+        this.fetchProducts();
+      }
     }
   }
 };
@@ -275,7 +417,7 @@ export default {
   color: #666;
 }
 
-.filter-section {
+.category-buttons-section {
   background-color: #f8f9fa;
   padding: 20px;
   border-radius: 8px;
@@ -283,34 +425,179 @@ export default {
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.filter-section h3 {
+.category-buttons-section h3 {
   margin-top: 0;
   margin-bottom: 15px;
   color: #333;
 }
 
-.filter-form {
+.category-buttons {
   display: flex;
-  gap: 15px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  min-width: 200px;
+.category-btn {
+  background-color: #e9ecef;
+  color: #495057;
+  border: 1px solid #ced4da;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
-.filter-group label {
-  margin-bottom: 5px;
+.category-btn:hover {
+  background-color: #dee2e6;
+  border-color: #adb5bd;
+  transform: translateY(-1px);
+}
+
+.category-btn.active {
+  background-color: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.category-btn.active:hover {
+  background-color: #0056b3;
+  border-color: #0056b3;
+}
+
+.sub-category-section {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #dee2e6;
+}
+
+.sub-category-section h4 {
+  margin: 0 0 10px 0;
+  color: #666;
+  font-size: 14px;
   font-weight: 500;
-  color: #555;
 }
 
-.filter-group select {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
+.sub-category-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sub-category-btn {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #e9ecef;
+  padding: 6px 12px;
+  border-radius: 15px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.sub-category-btn:hover {
+  background-color: #e9ecef;
+  border-color: #dee2e6;
+  transform: translateY(-1px);
+}
+
+.sub-category-btn.active {
+  background-color: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+
+.sub-category-btn.active:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
+}
+
+.search-sort-section {
+  background-color: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.search-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  padding: 10px 15px;
+  border: 1px solid #ced4da;
   border-radius: 4px;
+  font-size: 14px;
+  transition: border-color 0.2s ease;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.search-btn {
+  background-color: #28a745;
+  white-space: nowrap;
+}
+
+.search-btn:hover {
+  background-color: #218838;
+}
+
+.sort-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sort-container label {
+  font-weight: 500;
+  color: #333;
+  margin: 0;
+}
+
+.sort-select {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.25);
+}
+
+.sort-direction-btn {
+  padding: 8px 12px;
+  min-width: 40px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 15px;
+  margin-top: 30px;
+  padding: 20px;
+}
+
+.page-info {
+  color: #666;
   font-size: 14px;
 }
 
@@ -492,12 +779,18 @@ export default {
     grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   }
   
-  .filter-form {
-    flex-direction: column;
+  .category-buttons {
+    justify-content: center;
   }
   
-  .filter-group {
-    min-width: 100%;
+  .category-btn {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  .sub-category-btn {
+    font-size: 11px;
+    padding: 4px 8px;
   }
   
   .buy-form {

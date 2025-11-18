@@ -1,5 +1,6 @@
 package com.shop.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
@@ -28,6 +29,7 @@ public class SubCategory {
     
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
+    @JsonIgnoreProperties({"subCategories"})
     private Category category;
 
     // Getters and Setters

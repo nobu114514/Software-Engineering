@@ -1,6 +1,9 @@
 <template>
   <div class="container">
-    <h2>库存日志</h2>
+    <div class="header-container">
+      <h2>库存日志</h2>
+      <button class="btn btn-secondary" @click="goBack">返回</button>
+    </div>
     <div class="stock-logs-container">
       <div class="filter-section">
         <input
@@ -97,6 +100,11 @@ export default {
         minute: '2-digit',
         second: '2-digit'
       })
+    },
+    
+    // 返回上一页
+    goBack() {
+      this.$router.push('/seller/dashboard')
     }
   }
 }
@@ -107,6 +115,28 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.btn.btn-secondary {
+  padding: 8px 16px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.btn.btn-secondary:hover {
+  background-color: #5a6268;
 }
 
 .stock-logs-container {

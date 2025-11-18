@@ -1,6 +1,9 @@
 <template>
   <div class="category-management">
-    <h1>分类管理</h1>
+    <div class="header-container">
+      <h1>分类管理</h1>
+      <button class="btn btn-secondary" @click="goBack">返回</button>
+    </div>
     
     <div class="card">
       <h2>添加新分类</h2>
@@ -293,6 +296,11 @@ export default {
           this.error = `删除分类失败: ${err.response?.data?.message || '请求被服务器拒绝'}`;
         }
       }
+    },
+    
+    // 返回上一页
+    goBack() {
+      this.$router.push('/seller/dashboard')
     }
   }
 };
@@ -305,9 +313,16 @@ export default {
   padding: 20px;
 }
 
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
 h1 {
   color: #E02E24;
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 .card {

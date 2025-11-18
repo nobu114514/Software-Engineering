@@ -1,6 +1,9 @@
 <template>
     <div class="product-history">
-        <h1>商品历史记录</h1>
+        <div class="header-container">
+            <h1>商品历史记录</h1>
+            <button class="btn btn-secondary" @click="goBack">返回</button>
+        </div>
 
         <div v-if="loading" class="loading">加载中...</div>
 
@@ -145,6 +148,11 @@
             this.error = '删除商品失败，请重试'
             console.error(err)
           }
+        },
+        
+        // 返回上一页
+        goBack() {
+          this.$router.push('/seller/dashboard')
         }
       }
     }
@@ -169,12 +177,6 @@
       border: 1px solid #f5c6cb;
     }
 
-    .alert-info {
-      background-color: #d1ecf1;
-      color: #0c5460;
-      border: 1px solid #bee5eb;
-    }
-
     .product-table {
       width: 100%;
       border-collapse: collapse;
@@ -195,6 +197,27 @@
 
     .status-inactive {
       color: #6c757d;
+    }
+
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .btn-secondary:hover {
+      background-color: #5a6268;
     }
 
     .status-frozen {

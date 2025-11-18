@@ -284,56 +284,38 @@ export default {
       try {
         this.loading = true;
         
-        // 如果有搜索关键字，使用搜索API
+        // 构建搜索API的URL - 无论是否有搜索关键字都使用搜索API以支持排序
+        let url = 'http://localhost:8081/api/products/search';
+        let params = {
+          page: this.currentPage,
+          size: this.pageSize,
+          sortBy: this.sortBy,
+          sortDir: this.sortDirection
+        };
+        
+        // 如果有搜索关键字，添加到参数中
         if (this.searchKeyword && this.searchKeyword.trim()) {
-          // 构建搜索API的URL
-          let url = 'http://localhost:8081/api/products/search';
-          let params = {
-            page: this.currentPage,
-            size: this.pageSize,
-            sortBy: this.sortBy,
-            sortDir: this.sortDirection,
-            keyword: this.searchKeyword.trim()
-          };
-          
-          // 根据分类选择不同的搜索API端点
-          if (this.selectedSubCategoryId) {
-            url = `http://localhost:8081/api/products/sub-category/${this.selectedSubCategoryId}/search`;
-          } else if (this.selectedCategoryId) {
-            url = `http://localhost:8081/api/products/category/${this.selectedCategoryId}/search`;
-          }
-          
-          const response = await axios.get(url, { params });
-          
-          // 处理分页响应
-          if (response.data && typeof response.data === 'object' && response.data.content) {
-            // 这是分页响应
-            this.products = response.data.content;
-            this.totalPages = response.data.totalPages;
-            this.totalElements = response.data.totalElements;
-            this.currentPage = response.data.number;
-          } else {
-            // 兼容旧的列表响应
-            const data = response.data.data || response.data;
-            const productsArray = Array.isArray(data) ? data : [data].filter(Boolean);
-            this.products = productsArray;
-            this.totalPages = 1;
-            this.totalElements = productsArray.length;
-            this.currentPage = 0;
-          }
+          params.keyword = this.searchKeyword.trim();
+        }
+        
+        // 根据分类选择不同的搜索API端点
+        if (this.selectedSubCategoryId) {
+          url = `http://localhost:8081/api/products/sub-category/${this.selectedSubCategoryId}/search`;
+        } else if (this.selectedCategoryId) {
+          url = `http://localhost:8081/api/products/category/${this.selectedCategoryId}/search`;
+        }
+        
+        const response = await axios.get(url, { params });
+        
+        // 处理分页响应
+        if (response.data && typeof response.data === 'object' && response.data.content) {
+          // 这是分页响应
+          this.products = response.data.content;
+          this.totalPages = response.data.totalPages;
+          this.totalElements = response.data.totalElements;
+          this.currentPage = response.data.number;
         } else {
-          // 没有搜索关键字时，使用普通的分类筛选API
-          let url = 'http://localhost:8081/api/products/active-list';
-          
-          if (this.selectedSubCategoryId) {
-            url = `http://localhost:8081/api/products/sub-category/${this.selectedSubCategoryId}/active`;
-          } else if (this.selectedCategoryId) {
-            url = `http://localhost:8081/api/products/category/${this.selectedCategoryId}/active`;
-          }
-          
-          const response = await axios.get(url);
-          
-          // 处理列表响应
+          // 兼容旧的列表响应
           const data = response.data.data || response.data;
           const productsArray = Array.isArray(data) ? data : [data].filter(Boolean);
           this.products = productsArray;

@@ -78,7 +78,8 @@ public class ProductService {
         Pageable pageable = PageRequest.of(page, size, sort);
         
         if (keyword == null || keyword.trim().isEmpty()) {
-            return productRepository.findAll(pageable);
+            // 没有搜索关键字时，只返回上架商品
+            return productRepository.findByIsActiveTrue(pageable);
         }
         
         return productRepository.searchActiveProducts(keyword.trim(), pageable);
@@ -90,7 +91,8 @@ public class ProductService {
         Pageable pageable = PageRequest.of(page, size, sort);
         
         if (keyword == null || keyword.trim().isEmpty()) {
-            return productRepository.findAll(pageable);
+            // 没有搜索关键字时，返回指定分类的上架商品
+            return productRepository.findBySubCategoryCategoryIdAndIsActiveTrue(categoryId, pageable);
         }
         
         return productRepository.searchActiveProductsByCategory(categoryId, keyword.trim(), pageable);
@@ -102,7 +104,8 @@ public class ProductService {
         Pageable pageable = PageRequest.of(page, size, sort);
         
         if (keyword == null || keyword.trim().isEmpty()) {
-            return productRepository.findAll(pageable);
+            // 没有搜索关键字时，返回指定子分类的上架商品
+            return productRepository.findBySubCategoryIdAndIsActiveTrue(subCategoryId, pageable);
         }
         
         return productRepository.searchActiveProductsBySubCategory(subCategoryId, keyword.trim(), pageable);

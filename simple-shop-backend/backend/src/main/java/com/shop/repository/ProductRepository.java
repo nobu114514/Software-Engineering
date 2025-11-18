@@ -24,6 +24,11 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findBySubCategoryCategoryId(Long categoryId);
     List<Product> findBySubCategoryCategoryIdAndIsActiveTrue(Long categoryId); // 获取指定一级分类的上架商品
 
+    // 分页查询方法
+    Page<Product> findByIsActiveTrue(Pageable pageable); // 分页查询所有上架商品
+    Page<Product> findBySubCategoryCategoryIdAndIsActiveTrue(Long categoryId, Pageable pageable); // 分页查询指定一级分类的上架商品
+    Page<Product> findBySubCategoryIdAndIsActiveTrue(Long subCategoryId, Pageable pageable); // 分页查询指定子分类的上架商品
+
     // 搜索相关方法
     @Query("SELECT p FROM Product p WHERE p.isActive = true AND " +
            "(LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +

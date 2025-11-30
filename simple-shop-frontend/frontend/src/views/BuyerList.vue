@@ -1,6 +1,9 @@
 <template>
   <div class="buyer-list">
-    <h1>购买意向列表</h1>
+    <div class="header-container">
+      <h1>购买意向列表</h1>
+      <button class="btn btn-secondary" @click="goBack">返回</button>
+    </div>
 
     <div v-if="loading" class="loading">加载中...</div>
 
@@ -47,10 +50,6 @@
     <div v-if="!loading && buyers.length === 0" class="alert alert-danger">
       暂无购买意向记录
     </div>
-    <br>
-    <a href="/seller/dashboard" class="btn btn-secondary" style="margin-bottom: 1rem;">
-      返回
-    </a>
   </div>
 </template>
 
@@ -117,6 +116,10 @@ export default {
         }, 3000)
       }
     },
+    // 返回上一页
+    goBack() {
+      this.$router.push('/seller/dashboard')
+    },
     formatDate(dateString) {
       if (!dateString) return ''
       const date = new Date(dateString)
@@ -171,8 +174,23 @@ tr:nth-child(even) {
   margin-right: 0.5rem;
 }
 
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+h1 {
+  margin-bottom: 0;
+}
+
 .btn-secondary {
-  background: #dc3545;
+  background: #6c757d;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
 }
 
 .status-completed {

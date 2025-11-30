@@ -24,8 +24,8 @@
               <th style="width: 10%">商品价格</th>
               <th style="width: 10%">商品主题</th>
               <th style="width: 24%">商品详情</th>
-              <th style="width: 10%">库存</th>
-            <th style="width: 6%">操作</th>
+              <th style="width: 15%">库存</th>
+            <th style="width: 11%">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -44,8 +44,6 @@
               </td>
               <td>
                 <select v-model="item.subCategory" required>
-                  <!-- 当一级分类不为"同上"且与上一个一级分类相同时，才显示二级分类的"同上"选项 -->
-                  <!-- 换句话说：如果一级分类为"同上"或与上一个一级分类相同，才显示"同上"选项 -->
                   <option v-if="index > 0 && (item.categoryId === 'same' || hasSameCategoryAsPrevious(index))" :value="'same'">同上</option>
                   <option v-for="subCategory in getSubCategories(index)" :key="subCategory.id" :value="subCategory">
                     {{ subCategory.name }}
@@ -62,7 +60,7 @@
                 <textarea v-model="item.description" placeholder="请输入商品详情"></textarea>
               </td>
               <td>
-                <input type="number" v-model="item.stock" min="0" required placeholder="0">
+                <input type="number" v-model="item.stock" min="1" required placeholder="1">
               </td>
               <td>
                 <button @click="removeRow(index)" class="btn-circle remove-btn" title="删除一行" :disabled="products.length <= 1">-</button>
@@ -97,7 +95,7 @@ export default {
             categoryId: null,
             subCategory: null,
             price: 0,
-            stock: 0,
+            stock: 1,
             theme: '',
             description: ''
           },
@@ -106,7 +104,7 @@ export default {
             categoryId: 'same',
             subCategory: 'same',
             price: 0,
-            stock: 0,
+            stock: 1,
             theme: '',
             description: ''
           }
@@ -129,7 +127,7 @@ export default {
         // 如果有分类，自动选择第一个分类作为默认值
         if (this.categories.length > 0 && this.products[0].categoryId === null) {
           this.products[0].categoryId = this.categories[0].id
-          this.loadSubCategories(this.categories[0].id, 0)
+          await this.loadSubCategories(this.categories[0].id, 0)
         }
         this.loading = false
       } catch (err) {
@@ -246,7 +244,7 @@ export default {
         categoryId: 'same',
         subCategory: 'same', // 因为一级分类是"同上"，所以二级分类也可以默认为"同上"
         price: 0,
-        stock: 0,
+        stock: 1,
         theme: '',
         description: ''
       }
@@ -378,11 +376,6 @@ export default {
   margin-top: 1rem;
 }
 
-.action-buttons {
-  display: flex;
-  align-items: center;
-}
-
 .btn-circle {
   width: 30px;
   height: 30px;
@@ -451,10 +444,6 @@ export default {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .table-controls {
-    flex-direction: column;
-  }
-  
   .form-actions {
     flex-direction: column;
   }

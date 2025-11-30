@@ -1,6 +1,9 @@
 <template>
   <div class="customer-list">
-    <h1>客户管理</h1>
+    <div class="header-container">
+      <h1>客户管理</h1>
+      <button class="btn btn-secondary" @click="goBack">返回</button>
+    </div>
 
     <div v-if="loading" class="loading">加载中...</div>
 
@@ -124,10 +127,7 @@
       </div>
     </div>
     
-    <br>
-    <a href="/seller/dashboard" class="btn btn-secondary" style="margin-bottom: 1rem;">
-      返回卖家后台
-    </a>
+
   </div>
 </template>
 
@@ -377,6 +377,11 @@ export default {
         default:
           return status || '未知'
       }
+    },
+    
+    // 返回上一页
+    goBack() {
+      this.$router.push('/seller/dashboard')
     }
   }
 }
@@ -389,7 +394,19 @@ export default {
   padding: 20px;
 }
 
-h1, h2, h3 {
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+h1 {
+  color: #333;
+  margin-bottom: 0;
+}
+
+h2, h3 {
   color: #333;
   margin-bottom: 20px;
 }
@@ -509,23 +526,6 @@ tr:hover {
 
 .btn-info:hover {
   background-color: #138496;
-}
-
-
-
-.status-completed {
-  color: #28a745;
-  font-weight: bold;
-}
-
-.status-pending {
-  color: #ffc107;
-  font-weight: bold;
-}
-
-.status-cancelled {
-  color: #dc3545;
-  font-weight: bold;
 }
 
 .customer-details {

@@ -2,7 +2,10 @@
   <div class="product-form">
     <div class="header-section">
       <h1>{{ isEditing ? '编辑商品' : '发布新商品' }}</h1>
-      <button v-if="!isEditing" @click="goToBatchPublish" class="btn btn-primary batch-publish-btn">批量发布</button>
+      <div class="header-actions">
+        <button type="button" class="btn btn-secondary" @click="goBack">返回</button>
+        <button v-if="!isEditing" @click="goToBatchPublish" class="btn btn-primary batch-publish-btn">批量发布</button>
+      </div>
     </div>
     
     <div v-if="loading" class="loading">加载中...</div>
@@ -44,12 +47,12 @@
         <label for="imageUrl">商品主图URL</label>
         <input type="text" id="imageUrl" v-model="product.imageUrl" 
                placeholder="输入图片URL，如：https://picsum.photos/600/400">
-        <p class="help-text">您也可以在下方的商品详情中插入更多图片</p>
+        <p class="help-text">在下方的商品详情中插入更多图片</p>
       </div>
       <div class="form-group">
         <label for="stock">商品库存</label>
-        <input type="number" id="stock" v-model="product.stock" min="0" step="1" required>
-        <p class="help-text">设置商品的初始库存数量</p>
+        <input type="number" id="stock" v-model="product.stock" min="1" step="1" required>
+        <p class="help-text"><strong style="color: #E02E24;">（库存必须大于0）</strong></p>
       </div>
       <div class="form-group">
         <label>商品详情</label>
@@ -57,7 +60,6 @@
       </div>
       <div class="form-actions">
         <button type="submit" class="btn">{{ isEditing ? '更新商品' : '发布商品' }}</button>
-        <a href="/seller/dashboard" class="btn btn-secondary">取消</a>
       </div>
     </form>
   </div>
@@ -78,7 +80,7 @@ export default {
         price: 0,
         imageUrl: '',
         description: '',
-        stock: 0,
+        stock: 1,
         subCategory: null
       },
       isEditing: false,
@@ -166,6 +168,11 @@ export default {
     goToBatchPublish() {
       this.$router.push('/seller/product/batch')
     },
+    
+    // 返回上一页
+    goBack() {
+      this.$router.push('/seller/dashboard')
+    },
     async saveProduct() {
       try {
         console.log('Sending product data:', this.product); // 添加日志查看发送的数据
@@ -194,6 +201,12 @@ export default {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1.5rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
 }
 
 .batch-publish-btn {

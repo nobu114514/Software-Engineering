@@ -1,6 +1,9 @@
 <template>
-  <div class="change-password">
-    <h1>修改密码</h1>
+  <div class="container">
+    <div class="header-container">
+      <h2>修改密码</h2>
+      <button class="btn btn-secondary" @click="goBack">返回</button>
+    </div>
     
     <div v-if="error" class="alert alert-danger">
       {{ error }}
@@ -25,7 +28,6 @@
       </div>
       <div class="form-actions">
         <button type="submit" class="btn">修改密码</button>
-        <a href="/seller/dashboard" class="btn btn-secondary">取消</a>
       </div>
     </form>
   </div>
@@ -74,15 +76,109 @@ export default {
         this.success = false
         console.error(err)
       }
+    },
+    
+    // 返回上一页
+    goBack() {
+      this.$router.push('/seller/dashboard')
     }
   }
 }
 </script>
 
 <style scoped>
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.btn.btn-secondary {
+  padding: 8px 16px;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.btn.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+.card {
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
 .form-actions {
   margin-top: 1.5rem;
   display: flex;
   gap: 1rem;
+}
+
+.btn {
+  display: inline-block;
+  padding: 8px 16px;
+  background-color: #E02E24;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.btn:hover {
+  background-color: #c82333;
+}
+
+.alert {
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.alert-success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
 }
 </style>

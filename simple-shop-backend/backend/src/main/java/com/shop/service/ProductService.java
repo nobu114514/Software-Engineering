@@ -112,20 +112,23 @@ public class ProductService {
     }
 
     public Product createProduct(Product product) {
+        // 发布商品时必须库存大于0
+        if (product.getStock() <= 0) {
+            throw new IllegalArgumentException("发布商品时库存必须大于0");
+        }
+        
         product.setActive(true);
         Product savedProduct = productRepository.save(product);
         
         // 记录库存日志 - 商品创建时的初始库存
-        if (savedProduct.getStock() > 0) {
-            stockLogService.createStockLog(
-                savedProduct, 
-                savedProduct.getStock(), 
-                0, // 变更前库存为0
-                savedProduct.getStock(), // 变更后库存
-                "CREATE", 
-                "商品创建时设置初始库存"
-            );
-        }
+        stockLogService.createStockLog(
+            savedProduct, 
+            savedProduct.getStock(), 
+            0, // 变更前库存为0
+            savedProduct.getStock(), // 变更后库存
+            "CREATE", 
+            "商品创建时设置初始库存"
+        );
         
         return savedProduct;
     }
@@ -151,6 +154,13 @@ public class ProductService {
                     int newStock = product.getStock();
                     String action = newStock > oldStock ? "INCREASE" : "DECREASE";
                     String description = "管理员修改商品库存";
+                    
+                    // 库存为0时自动下架商品
+                    if (newStock == 0) {
+                        existingProduct.setActive(false);
+                        description = "管理员修改商品库存，库存为0自动下架";
+                    }
+                    
                     existingProduct.setStock(newStock);
                     // Save the updated product first
                     Product saved = productRepository.save(existingProduct);
@@ -158,6 +168,10 @@ public class ProductService {
                     stockLogService.createStockLog(saved, newStock - oldStock, oldStock, newStock, action, description);
                 } else {
                     existingProduct.setStock(product.getStock());
+                    // 如果库存已经是0，确保商品为下架状态
+                    if (product.getStock() == 0) {
+                        existingProduct.setActive(false);
+                    }
                 }
                 
                 // Load sub-category from database to maintain proper relationships
@@ -208,10 +222,17 @@ public class ProductService {
             int oldStock = product.getStock();
             int newStock = oldStock - quantity;
             product.setStock(newStock);
+            
+            // 库存为0时自动下架商品
+            if (newStock == 0) {
+                product.setActive(false);
+            }
+            
             // Save the updated product
             Product saved = productRepository.save(product);
             // Log the stock change
-            stockLogService.createStockLog(saved, -quantity, oldStock, newStock, "DECREASE", "用户下单减少库存");
+            String description = newStock == 0 ? "用户下单减少库存，库存为0自动下架" : "用户下单减少库存";
+            stockLogService.createStockLog(saved, -quantity, oldStock, newStock, "DECREASE", description);
             return saved;
         }
         return null;

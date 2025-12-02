@@ -349,33 +349,81 @@ export default {
       })
     },
     getOrderStatusClass(status) {
+      // 处理数字状态
+      const statusNum = parseInt(status);
+      if (!isNaN(statusNum)) {
+        switch (statusNum) {
+          case 0:
+            return 'status-customer-ordered';
+          case 1:
+            return 'status-merchant-confirmed';
+          case 2:
+            return 'status-ready-for-shipment';
+          case 3:
+            return 'status-shipping';
+          case 4:
+            return 'status-completed';
+          case 5:
+            return 'status-failed';
+          default:
+            return '';
+        }
+      }
+      // 兼容旧的文本状态
       switch (status) {
         case 'COMPLETED':
         case 'completed':
-          return 'status-completed'
+          return 'status-completed';
         case 'PENDING':
         case 'pending':
-          return 'status-pending'
+          return 'status-customer-ordered';
         case 'CANCELLED':
         case 'cancelled':
-          return 'status-cancelled'
+          return 'status-cancelled';
+        case 'FAILED':
+        case 'failed':
+          return 'status-failed';
         default:
-          return ''
+          return '';
       }
     },
     getOrderStatusText(status) {
+      // 处理数字状态
+      const statusNum = parseInt(status);
+      if (!isNaN(statusNum)) {
+        switch (statusNum) {
+          case 0:
+            return '客户下单';
+          case 1:
+            return '商家确认';
+          case 2:
+            return '备货完成';
+          case 3:
+            return '开始发货';
+          case 4:
+            return '交易完成';
+          case 5:
+            return '交易失败';
+          default:
+            return '未知';
+        }
+      }
+      // 兼容旧的文本状态
       switch (status) {
         case 'COMPLETED':
         case 'completed':
-          return '已完成'
+          return '交易完成';
         case 'PENDING':
         case 'pending':
-          return '处理中'
+          return '客户下单';
         case 'CANCELLED':
         case 'cancelled':
-          return '已取消'
+          return '已取消';
+        case 'FAILED':
+        case 'failed':
+          return '交易失败';
         default:
-          return status || '未知'
+          return status || '未知';
       }
     },
     
@@ -458,6 +506,42 @@ th {
 
 tr:hover {
   background-color: #f5f5f5;
+}
+
+/* 订单状态样式 */
+.status-customer-ordered {
+  color: #ffc107;
+  font-weight: bold;
+}
+
+.status-merchant-confirmed {
+  color: #17a2b8;
+  font-weight: bold;
+}
+
+.status-ready-for-shipment {
+  color: #6c757d;
+  font-weight: bold;
+}
+
+.status-shipping {
+  color: #007bff;
+  font-weight: bold;
+}
+
+.status-completed {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.status-failed {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.status-cancelled {
+  color: #dc3545;
+  font-weight: bold;
 }
 
 .search-bar {

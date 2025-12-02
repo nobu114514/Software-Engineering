@@ -1,5 +1,6 @@
 package com.shop.service;
 
+import com.shop.exception.BuyerServiceException;
 import com.shop.model.Buyer;
 import com.shop.model.Customer;
 import com.shop.model.Product;
@@ -10,13 +11,6 @@ import org.springframework.stereotype.Service;
 import javax.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
-
-// 自定义异常类，用于区分不同类型的错误
-class BuyerServiceException extends RuntimeException {
-    public BuyerServiceException(String message) {
-        super(message);
-    }
-}
 
 @Service
 public class BuyerService {
@@ -96,18 +90,96 @@ public class BuyerService {
     public boolean completeTransaction(Long buyerId, boolean success) {
         return buyerRepository.findById(buyerId).map(buyer -> {
             buyer.setCompleted(true);
-            Product product = buyer.getProduct();
-            
             if (success) {
+                buyer.setOrderStatus(4); // 交易完成
+                Product product = buyer.getProduct();
                 // 交易成功，减少库存但不自动下架商品
                 productService.decreaseStock(product.getId(), 1);
                 // 同时增加销量
                 productService.increaseSalesCount(product.getId(), 1);
+            } else {
+                buyer.setOrderStatus(5); // 交易失败
             }
             // 交易失败时不再需要解冻商品，因为商品不再被冻结
             
             buyerRepository.save(buyer);
             return true;
         }).orElse(false);
+    }
+    
+    @Transactional
+    public Buyer updateOrderStatus(Long buyerId, Integer status) {
+        return buyerRepository.findById(buyerId).map(buyer -> {
+            Integer currentStatus = buyer.getOrderStatus();
+            
+            // 如果当前状态为null，视为初始状态(0)
+            if (currentStatus == null) {
+                currentStatus = 0;
+            }
+            
+            // 检查订单是否已经处于终态（交易完成或交易失败）
+            if (currentStatus == 4 || currentStatus == 5) {
+                throw new BuyerServiceException("该订单已处于终态，无法再进行操作");
+            }
+            
+            // 验证状态值的有效性
+            if (status == null || status < 0 || status > 5) {
+                throw new BuyerServiceException("无效的订单状态值");
+            }
+            
+            // 验证状态更新的顺序（只能向前更新，不能回退）
+            if (status < currentStatus) {
+                throw new BuyerServiceException("订单状态不能回退");
+            }
+            
+            // 验证状态必须按顺序递增（只能递增1，不能跳过中间状态）
+            // 但允许直接跳转到交易失败状态
+            if (status > currentStatus + 1 && status != 5) {
+                throw new BuyerServiceException("订单状态必须按顺序更新，不能跳过中间状态");
+            }
+            
+            // 如果状态没有变化，直接返回buyer
+            if (status.equals(currentStatus)) {
+                return buyer;
+            }
+            
+            Product product = buyer.getProduct();
+            
+            // 根据不同的状态转换执行相应的业务逻辑
+            switch (status) {
+                case 1: // 商家确认
+                    // 检查商品库存是否充足
+                    if (product.getStock() <= 0) {
+                        throw new BuyerServiceException("商品库存不足，无法确认订单");
+                    }
+                    break;
+                
+                case 2: // 备货完成
+                    // 备货完成时的业务逻辑
+                    break;
+                
+                case 3: // 开始发货
+                    // 开始发货时的业务逻辑
+                    break;
+                    
+                case 4: // 交易完成
+                    // 减少库存
+                    productService.decreaseStock(product.getId(), 1);
+                    // 增加销量
+                    productService.increaseSalesCount(product.getId(), 1);
+                    buyer.setCompleted(true);
+                    break;
+                    
+                case 5: // 交易失败
+                    // 交易失败时的业务逻辑
+                    // 标记为已完成（终态）
+                    buyer.setCompleted(true);
+                    break;
+            }
+            
+            // 更新订单状态
+            buyer.setOrderStatus(status);
+            return buyerRepository.save(buyer);
+        }).orElseThrow(() -> new BuyerServiceException("购买意向不存在"));
     }
 }

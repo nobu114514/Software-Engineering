@@ -172,4 +172,57 @@ public class BuyerController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
+    
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelOrder(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Username", required = false) String username,
+            @RequestParam(required = false, defaultValue = "true") boolean isCustomer) {
+        // 解码URL编码的用户名
+        String decodedUsername = null;
+        try {
+            if (username != null) {
+                decodedUsername = URLDecoder.decode(username, "UTF-8");
+            }
+        } catch (Exception e) {
+            // 如果解码失败，使用原始用户名
+            decodedUsername = username;
+        }
+        
+        // 验证用户是否已登录
+        if (decodedUsername == null || decodedUsername.isEmpty()) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "请先登录再进行操作");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+        
+        try {
+            Buyer cancelledBuyer = buyerService.cancelOrder(id, decodedUsername, isCustomer);
+            
+            // 清除循环引用，避免JSON序列化问题
+            if (cancelledBuyer.getProduct() != null) {
+                cancelledBuyer.getProduct().setSubCategory(null);
+            }
+            
+            // 返回成功响应
+            Map<String, Object> successResponse = new HashMap<>();
+            successResponse.put("success", true);
+            successResponse.put("message", "订单取消成功");
+            successResponse.put("data", cancelledBuyer);
+            return ResponseEntity.ok(successResponse);
+        } catch (BuyerServiceException e) {
+            // 捕获BuyerServiceException异常
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        } catch (Exception e) {
+            // 捕获其他异常
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "系统异常，请稍后再试：" + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
 }

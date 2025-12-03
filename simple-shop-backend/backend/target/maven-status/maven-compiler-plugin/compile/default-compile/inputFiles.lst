@@ -17,6 +17,8 @@ F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\
 F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\repository\CustomerRepository.java
 F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\controller\SubCategoryController.java
 F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\model\Product.java
+F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\config\JwtAuthenticationFilter.java
+F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\config\SecurityConfig.java
 F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\service\SellerService.java
 F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\service\SubCategoryService.java
 F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\service\CustomerService.java
@@ -29,6 +31,7 @@ F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\
 F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\service\BuyerService.java
 F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\controller\SellerController.java
 F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\model\Customer.java
+F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\util\JwtUtil.java
 F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\service\ProductService.java
 F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\repository\SubCategoryRepository.java
 F:\作业\Software-Engineering2.0\litemall\simple-shop-backend\backend\src\main\java\com\shop\service\StockLogService.java

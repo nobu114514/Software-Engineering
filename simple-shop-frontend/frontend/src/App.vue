@@ -45,20 +45,21 @@ export default {
   methods: {
     checkLoginStatus() {
       // 检查卖家登录状态
-      this.isSellerLoggedIn = !!localStorage.getItem('sellerLoggedIn')
+      this.isSellerLoggedIn = !!localStorage.getItem('sellerToken')
       // 检查客户登录状态
-      this.isCustomerLoggedIn = !!localStorage.getItem('customerLoggedIn')
+      this.isCustomerLoggedIn = !!localStorage.getItem('customerToken')
       this.customerUsername = localStorage.getItem('customerUsername') || ''
     },
     // 卖家退出登录
     sellerLogout() {
-      localStorage.removeItem('sellerLoggedIn')
+      localStorage.removeItem('sellerToken')
+      localStorage.removeItem('sellerUsername')
       this.isSellerLoggedIn = false
       this.$router.push('/seller/login')
     },
     // 客户退出登录
     customerLogout() {
-      localStorage.removeItem('customerLoggedIn')
+      localStorage.removeItem('customerToken')
       localStorage.removeItem('customerUsername')
       this.isCustomerLoggedIn = false
       this.customerUsername = ''

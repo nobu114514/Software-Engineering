@@ -2,6 +2,7 @@ package com.shop.controller;
 
 import com.shop.model.Customer;
 import com.shop.service.CustomerService;
+import com.shop.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -22,6 +23,9 @@ public class CustomerController {
 
     @Autowired
     private CustomerService customerService;
+    
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> register(
@@ -62,16 +66,17 @@ public class CustomerController {
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(
-            @RequestParam String username,
+            @RequestParam String username, 
             @RequestParam String password) {
         
         Map<String, Object> response = new HashMap<>();
         
-        boolean success = customerService.login(username, password).isPresent();
-        
-        if (success) {
+        if (customerService.login(username, password).isPresent()) {
+            String token = jwtUtil.generateToken(username, "customer");
             response.put("success", true);
             response.put("message", "登录成功");
+            response.put("token", token);
+            response.put("username", username);
         } else {
             response.put("success", false);
             response.put("message", "用户名或密码错误");

@@ -8,8 +8,12 @@
         <label for="status-filter">订单状态：</label>
         <select id="status-filter" v-model="statusFilter" @change="fetchOrders">
           <option value="">全部状态</option>
-          <option value="pending">待处理</option>
-          <option value="completed">已完成</option>
+          <option value="0">客户下单</option>
+          <option value="1">商家确认</option>
+          <option value="2">备货完成</option>
+          <option value="3">开始发货</option>
+          <option value="4">交易完成</option>
+          <option value="5">交易失败</option>
         </select>
       </div>
       <div class="filter-item">
@@ -42,7 +46,9 @@
           </div>
           
           <div class="order-status">
-            <span class="status-badge" :class="order.is_completed ? 'status-completed' : 'status-pending'">{{ order.is_completed ? '已完成' : '待处理' }}</span>
+            <span class="status-badge" :class="getOrderStatusClass(order.order_status || (order.is_completed ? 'completed' : 'pending'))">
+              {{ getOrderStatusText(order.order_status || (order.is_completed ? 'completed' : 'pending')) }}
+            </span>
             <button class="btn btn-secondary" @click="showOrderDetail(order)">查看详情</button>
           </div>
         </div>
@@ -96,7 +102,9 @@
           </div>
           <div class="detail-item">
             <label>订单状态：</label>
-            <span class="status-badge" :class="selectedOrder.is_completed ? 'status-completed' : 'status-pending'">{{ selectedOrder.is_completed ? '已完成' : '待处理' }}</span>
+            <span class="status-badge" :class="getOrderStatusClass(selectedOrder.order_status || (selectedOrder.is_completed ? 'completed' : 'pending'))">
+              {{ getOrderStatusText(selectedOrder.order_status || (selectedOrder.is_completed ? 'completed' : 'pending')) }}
+            </span>
           </div>
         </div>
       </div>
@@ -184,8 +192,86 @@ export default {
       }
       return price.toFixed(2)
     },
-    
 
+    getOrderStatusClass(status) {
+      // 处理数字状态
+      const statusNum = parseInt(status);
+      if (!isNaN(statusNum)) {
+        switch (statusNum) {
+          case 0:
+            return 'status-customer-ordered';
+          case 1:
+            return 'status-merchant-confirmed';
+          case 2:
+            return 'status-ready-for-shipment';
+          case 3:
+            return 'status-shipping';
+          case 4:
+            return 'status-completed';
+          case 5:
+            return 'status-failed';
+          default:
+            return '';
+        }
+      }
+      // 兼容旧的文本状态
+      switch (status) {
+        case 'COMPLETED':
+        case 'completed':
+          return 'status-completed';
+        case 'PENDING':
+        case 'pending':
+          return 'status-customer-ordered';
+        case 'CANCELLED':
+        case 'cancelled':
+          return 'status-cancelled';
+        case 'FAILED':
+        case 'failed':
+          return 'status-failed';
+        default:
+          return '';
+      }
+    },
+    
+    getOrderStatusText(status) {
+      // 处理数字状态
+      const statusNum = parseInt(status);
+      if (!isNaN(statusNum)) {
+        switch (statusNum) {
+          case 0:
+            return '客户下单';
+          case 1:
+            return '商家确认';
+          case 2:
+            return '备货完成';
+          case 3:
+            return '开始发货';
+          case 4:
+            return '交易完成';
+          case 5:
+            return '交易失败';
+          default:
+            return '未知';
+        }
+      }
+      // 兼容旧的文本状态
+      switch (status) {
+        case 'COMPLETED':
+        case 'completed':
+          return '交易完成';
+        case 'PENDING':
+        case 'pending':
+          return '客户下单';
+        case 'CANCELLED':
+        case 'cancelled':
+          return '已取消';
+        case 'FAILED':
+        case 'failed':
+          return '交易失败';
+        default:
+          return status || '未知';
+      }
+    },
   }
 }
 </script>
@@ -294,14 +380,34 @@ export default {
   font-weight: 500;
 }
 
-.status-pending {
+.status-customer-ordered {
   background-color: #fff3cd;
   color: #856404;
+}
+
+.status-merchant-confirmed {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-ready-for-shipment {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.status-shipping {
+  background-color: #cce7ff;
+  color: #004085;
 }
 
 .status-completed {
   background-color: #d4edda;
   color: #155724;
+}
+
+.status-failed {
+  background-color: #f8d7da;
+  color: #721c24;
 }
 
 .status-cancelled {

@@ -1,0 +1,228 @@
+package com.shop.controller;
+
+import com.shop.exception.BuyerServiceException;
+import com.shop.model.Buyer;
+import com.shop.service.BuyerService;
+import com.shop.service.CustomerService;
+import com.shop.service.ProductService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/buyers")
+public class BuyerController {
+
+    @Autowired
+    private BuyerService buyerService;
+    
+    @Autowired
+    private ProductService productService;
+    
+    @Autowired
+    private CustomerService customerService;
+
+    @PostMapping("/product/{productId}")
+    public ResponseEntity<?> createBuyer(@RequestBody Buyer buyer, @PathVariable Long productId, @RequestHeader(value = "X-Username", required = false) String username) {
+        // 解码URL编码的用户名
+        String decodedUsername = null;
+        try {
+            if (username != null) {
+                decodedUsername = URLDecoder.decode(username, "UTF-8");
+            }
+        } catch (Exception e) {
+            // 如果解码失败，使用原始用户名
+            decodedUsername = username;
+        }
+        
+        // 验证用户是否已登录（简单实现，实际项目中应使用更安全的认证机制）
+        if (decodedUsername == null || decodedUsername.isEmpty()) {
+            // 返回未授权错误
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "请先登录再购买商品");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+        
+        try {
+            // 验证必填字段
+            if (buyer == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "购买信息不能为空");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+            
+            if (buyer.getName() == null || buyer.getName().trim().isEmpty()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "请填写联系人姓名");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+            
+            if (buyer.getPhone() == null || buyer.getPhone().trim().isEmpty()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "请填写联系电话");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+            
+            if (buyer.getAddress() == null || buyer.getAddress().trim().isEmpty()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "请填写收货地址");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+            
+            // 创建购买意向 - 现在会抛出具体的异常
+            Buyer created = buyerService.createBuyer(buyer, productId, decodedUsername);
+            
+            // 清除循环引用，避免JSON序列化问题
+            if (created.getProduct() != null) {
+                created.getProduct().setSubCategory(null);
+            }
+            
+            // 如果成功，返回创建的购买意向
+            Map<String, Object> successResponse = new HashMap<>();
+            successResponse.put("success", true);
+            successResponse.put("message", "购买意向创建成功");
+            successResponse.put("data", created);
+            return ResponseEntity.ok(successResponse);
+        } catch (RuntimeException e) {
+            // 捕获所有运行时异常，特别是BuyerServiceException
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            
+            // 提取错误信息
+            String errorMessage = e.getMessage();
+            
+            // 根据错误信息确定HTTP状态码
+            HttpStatus status = HttpStatus.BAD_REQUEST;
+            if (errorMessage.contains("不存在")) {
+                status = HttpStatus.NOT_FOUND;
+            } else if (errorMessage.contains("失败")) {
+                status = HttpStatus.INTERNAL_SERVER_ERROR;
+            }
+            
+            errorResponse.put("message", errorMessage);
+            return ResponseEntity.status(status).body(errorResponse);
+        } catch (Exception e) {
+            // 捕获所有其他异常
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "系统异常，请稍后再试：" + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    @GetMapping
+    public List<Buyer> getAllBuyers() {
+        List<Buyer> buyers = buyerService.getAllBuyers();
+        // 清除循环引用，避免JSON序列化问题
+        for (Buyer buyer : buyers) {
+            if (buyer.getProduct() != null) {
+                buyer.getProduct().setSubCategory(null);
+            }
+        }
+        return buyers;
+    }
+
+    @PutMapping("/{id}/complete")
+    public ResponseEntity<Boolean> completeTransaction(
+            @PathVariable Long id,
+            @RequestParam boolean success) {
+        boolean result = buyerService.completeTransaction(id, success);
+        return result ? ResponseEntity.ok(true) : ResponseEntity.notFound().build();
+    }
+    
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateOrderStatus(
+            @PathVariable Long id,
+            @RequestParam int status) {
+        try {
+            Buyer updatedBuyer = buyerService.updateOrderStatus(id, status);
+            
+            // 清除循环引用，避免JSON序列化问题
+            if (updatedBuyer.getProduct() != null) {
+                updatedBuyer.getProduct().setSubCategory(null);
+            }
+            
+            // 返回成功响应
+            Map<String, Object> successResponse = new HashMap<>();
+            successResponse.put("success", true);
+            successResponse.put("message", "订单状态更新成功");
+            successResponse.put("data", updatedBuyer);
+            return ResponseEntity.ok(successResponse);
+        } catch (BuyerServiceException e) {
+            // 捕获BuyerServiceException异常
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        } catch (Exception e) {
+            // 捕获其他异常
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "系统异常，请稍后再试：" + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+    
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelOrder(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-Username", required = false) String username,
+            @RequestParam(required = false, defaultValue = "true") boolean isCustomer) {
+        // 解码URL编码的用户名
+        String decodedUsername = null;
+        try {
+            if (username != null) {
+                decodedUsername = URLDecoder.decode(username, "UTF-8");
+            }
+        } catch (Exception e) {
+            // 如果解码失败，使用原始用户名
+            decodedUsername = username;
+        }
+        
+        // 验证用户是否已登录
+        if (decodedUsername == null || decodedUsername.isEmpty()) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "请先登录再进行操作");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+        }
+        
+        try {
+            Buyer cancelledBuyer = buyerService.cancelOrder(id, decodedUsername, isCustomer);
+            
+            // 清除循环引用，避免JSON序列化问题
+            if (cancelledBuyer.getProduct() != null) {
+                cancelledBuyer.getProduct().setSubCategory(null);
+            }
+            
+            // 返回成功响应
+            Map<String, Object> successResponse = new HashMap<>();
+            successResponse.put("success", true);
+            successResponse.put("message", "订单取消成功");
+            successResponse.put("data", cancelledBuyer);
+            return ResponseEntity.ok(successResponse);
+        } catch (BuyerServiceException e) {
+            // 捕获BuyerServiceException异常
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        } catch (Exception e) {
+            // 捕获其他异常
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "系统异常，请稍后再试：" + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+}

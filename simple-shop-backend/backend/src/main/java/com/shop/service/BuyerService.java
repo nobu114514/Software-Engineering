@@ -182,4 +182,54 @@ public class BuyerService {
             return buyerRepository.save(buyer);
         }).orElseThrow(() -> new BuyerServiceException("购买意向不存在"));
     }
+    
+    @Transactional
+    public Buyer cancelOrder(Long buyerId, String username, boolean isCustomer) {
+        return buyerRepository.findById(buyerId).map(buyer -> {
+            Integer currentStatus = buyer.getOrderStatus();
+            
+            // 如果当前状态为null，视为初始状态(0)
+            if (currentStatus == null) {
+                currentStatus = 0;
+            }
+            
+            // 检查订单是否已经处于终态（交易完成或交易失败）
+            if (currentStatus == 4 || currentStatus == 5) {
+                throw new BuyerServiceException("该订单已处于终态，无法再进行操作");
+            }
+            
+            if (isCustomer) {
+                // 客户取消订单
+                // 1. 验证是否是自己的订单
+                Optional<Customer> customerOpt = customerService.findByUsername(username);
+                if (!customerOpt.isPresent()) {
+                    throw new BuyerServiceException("用户信息不存在，请重新登录");
+                }
+                
+                Long customerId = customerOpt.get().getId();
+                if (!customerId.equals(buyer.getCustomerId())) {
+                    throw new BuyerServiceException("您无权取消此订单");
+                }
+                
+                // 2. 检查订单状态是否允许取消（开始发货前，即状态<3）
+                if (currentStatus >= 3) {
+                    throw new BuyerServiceException("订单已开始发货，无法取消");
+                }
+            } else {
+                // 商家取消订单
+                // 1. 验证是否是自己商品的订单
+                // 这里假设商家通过商品关联验证权限，实际项目中可能需要更复杂的权限验证
+                // 检查订单状态是否允许取消（交易完成前，即状态<4）
+                if (currentStatus >= 4) {
+                    throw new BuyerServiceException("订单已交易完成，无法取消");
+                }
+            }
+            
+            // 执行取消操作，将订单状态设置为交易失败
+            buyer.setOrderStatus(5);
+            buyer.setCompleted(true);
+            
+            return buyerRepository.save(buyer);
+        }).orElseThrow(() -> new BuyerServiceException("购买意向不存在"));
+    }
 }

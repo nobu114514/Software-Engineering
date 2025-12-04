@@ -46,6 +46,7 @@
               <button v-if="buyer.orderStatus < 3" class="btn" @click="updateOrderStatus(buyer.id, 3)" :disabled="buyer.orderStatus === 4 || buyer.orderStatus === 5">开始发货</button>
               <button v-if="buyer.orderStatus < 4" class="btn" @click="completeTransaction(buyer.id, true)" :disabled="buyer.orderStatus === 4 || buyer.orderStatus === 5">交易完成</button>
               <button class="btn btn-secondary" @click="completeTransaction(buyer.id, false)" :disabled="buyer.orderStatus === 4 || buyer.orderStatus === 5">交易失败</button>
+              <button class="btn btn-danger" @click="confirmCancelOrder(buyer.id)" :disabled="buyer.orderStatus === 4 || buyer.orderStatus === 5">取消订单</button>
             </template>
             <span v-else>已处理</span>
           </td>
@@ -154,7 +155,7 @@ export default {
         }
         
         console.log('发送请求:', {
-          url: `/api/buyers/${buyerId}/status`,
+          url: `/buyers/${buyerId}/status`,
           method: 'PUT',
           params: { status },
           headers: headers
@@ -245,6 +246,66 @@ export default {
         hour: '2-digit',
         minute: '2-digit'
       })
+    },
+    // 确认取消订单
+    confirmCancelOrder(orderId) {
+      if (confirm('确定要取消这个订单吗？此操作不可恢复。')) {
+        this.cancelOrder(orderId)
+      }
+    },
+    // 商家取消订单
+    async cancelOrder(orderId) {
+      try {
+        // 从localStorage获取当前登录的卖家用户名
+        const sellerUsername = localStorage.getItem('sellerUsername')
+        
+        // 构建请求头，添加认证信息
+        const headers = {
+          'X-Username': sellerUsername
+        }
+        
+        await this.$axios.put(`/buyers/${orderId}/cancel`, null, {
+          params: { isCustomer: false },
+          headers: headers
+        })
+        
+        // 显示成功信息
+        this.error = ''
+        this.success = '订单取消成功！'
+        
+        // 刷新列表
+        this.fetchBuyers()
+        
+        // 显示成功信息3秒后自动清除
+        setTimeout(() => {
+          this.success = ''
+        }, 3000)
+      } catch (err) {
+        // 增强错误信息显示
+        let errorMessage = '取消订单失败，请重试'
+        if (err.response) {
+          // 服务器返回了错误响应
+          errorMessage = err.response.data?.message || `服务器错误: ${err.response.status}`
+          console.error('取消订单 - 服务器错误响应:', {
+            status: err.response.status,
+            data: err.response.data
+          })
+        } else if (err.request) {
+          // 请求已发送但没有收到响应
+          errorMessage = '服务器无响应，请检查网络连接'
+          console.error('取消订单 - 请求错误:', err.request)
+        } else {
+          // 请求配置出错
+          errorMessage = `请求错误: ${err.message}`
+          console.error('取消订单 - 请求配置错误:', err)
+        }
+        
+        this.error = errorMessage
+        // 延长错误信息显示时间，便于查看
+        setTimeout(() => {
+          this.error = ''
+        }, 10000) // 10秒后清除错误信息
+      }
     }
   }
 }
@@ -285,7 +346,22 @@ tr:nth-child(even) {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin-right: 0.5rem;
+  margin-right: 0.8rem;
+  margin-bottom: 0.8rem;
+  display: inline-block;
+}
+
+.btn:hover {
+  background: #218838;
+}
+
+.btn-danger {
+  background: #dc3545;
+  margin-top: 0.8rem;
+}
+
+.btn-danger:hover {
+  background: #c82333;
 }
 
 .header-container {

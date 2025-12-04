@@ -106,6 +106,29 @@
               {{ getOrderStatusText(selectedOrder.order_status || (selectedOrder.is_completed ? 'completed' : 'pending')) }}
             </span>
           </div>
+          
+          <!-- 取消订单按钮 -->
+          <div v-if="canCancelOrder(selectedOrder)" class="action-buttons">
+            <button class="btn btn-danger" @click="confirmCancelOrder">取消订单</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 确认取消订单弹窗 -->
+    <div v-if="showCancelConfirm" class="modal-overlay" @click.self="closeCancelConfirm">
+      <div class="modal-content card" style="max-width: 400px;">
+        <div class="modal-header">
+          <h3>确认取消订单</h3>
+          <button class="close-btn" @click="closeCancelConfirm">×</button>
+        </div>
+        <div class="modal-body">
+          <p>您确定要取消订单 #{{ selectedOrder?.id }} 吗？</p>
+          <p style="color: #666; font-size: 14px; margin-top: 10px;">取消后订单将无法恢复。</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" @click="closeCancelConfirm">取消</button>
+          <button class="btn btn-danger" @click="cancelOrder">确认取消</button>
         </div>
       </div>
     </div>
@@ -123,7 +146,8 @@ export default {
       statusFilter: '',
       timeFilter: 'desc',
       showDetail: false,
-      selectedOrder: null
+      selectedOrder: null,
+      showCancelConfirm: false
     }
   },
   created() {
@@ -270,6 +294,60 @@ export default {
           return '交易失败';
         default:
           return status || '未知';
+      }
+    },
+    
+    // 判断订单是否可以取消（客户规则：开始发货前，即状态<3）
+    canCancelOrder(order) {
+      const status = parseInt(order.order_status);
+      // 不是NaN且状态小于3且不是终态
+      return !isNaN(status) && status < 3 && status !== 4 && status !== 5;
+    },
+    
+    // 显示确认取消订单对话框
+    confirmCancelOrder() {
+      this.showCancelConfirm = true;
+    },
+    
+    // 关闭确认取消订单对话框
+    closeCancelConfirm() {
+      this.showCancelConfirm = false;
+    },
+    
+    // 执行取消订单操作
+    async cancelOrder() {
+      if (!this.selectedOrder) return;
+      
+      try {
+        // 从localStorage获取当前登录用户名
+        const customerUsername = localStorage.getItem('customerUsername');
+        
+        // 构建请求头
+        const headers = {
+          'X-Username': customerUsername
+        };
+        
+        // 调用后端API取消订单
+        await this.$axios.put(`/buyers/${this.selectedOrder.id}/cancel`, null, {
+          params: { isCustomer: true },
+          headers: headers
+        });
+        
+        // 关闭确认对话框
+        this.closeCancelConfirm();
+        
+        // 刷新订单列表
+        this.fetchOrders();
+        
+        // 显示成功提示
+        alert('订单取消成功！');
+        
+        // 关闭订单详情
+        this.closeDetail();
+      } catch (err) {
+        console.error('取消订单失败', err);
+        // 显示失败提示
+        alert(err.response?.data?.message || '取消订单失败，请稍后重试');
       }
     },
   }
@@ -501,5 +579,19 @@ export default {
 .detail-item span {
   flex: 1;
   color: #333;
+}
+
+/* 模态框底部按钮样式 */
+.modal-footer {
+  padding: 15px 20px;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.modal-footer .btn {
+  margin-right: 0;
+  margin-bottom: 0;
 }
 </style>

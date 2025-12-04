@@ -119,35 +119,45 @@ public class CustomerService {
         
         if (status != null && !status.isEmpty()) {
             // 支持新的状态筛选
-            switch (status) {
-                case "客户下单":
-                    sqlBuilder.append("AND b.order_status = 0 ");
-                    break;
-                case "商家确认":
-                    sqlBuilder.append("AND b.order_status = 1 ");
-                    break;
-                case "备货完成":
-                    sqlBuilder.append("AND b.order_status = 2 ");
-                    break;
-                case "开始发货":
-                    sqlBuilder.append("AND b.order_status = 3 ");
-                    break;
-                case "交易完成":
-                    sqlBuilder.append("AND b.order_status = 4 ");
-                    break;
-                case "交易失败":
-                    sqlBuilder.append("AND b.order_status = 5 ");
-                    break;
-                // 兼容旧的状态值
-                case "completed":
-                    sqlBuilder.append("AND b.order_status >= 1 ");
-                    break;
-                case "pending":
-                    sqlBuilder.append("AND b.order_status = 0 ");
-                    break;
-                case "failed":
-                    sqlBuilder.append("AND b.order_status = 5 ");
-                    break;
+            try {
+                // 首先尝试将status转换为数字
+                int statusCode = Integer.parseInt(status);
+                if (statusCode >= 0 && statusCode <= 5) {
+                    sqlBuilder.append("AND b.order_status = ? ");
+                    paramsList.add(statusCode);
+                }
+            } catch (NumberFormatException e) {
+                // 如果不是数字，则尝试匹配状态名称或旧状态值
+                switch (status) {
+                    case "客户下单":
+                        sqlBuilder.append("AND b.order_status = 0 ");
+                        break;
+                    case "商家确认":
+                        sqlBuilder.append("AND b.order_status = 1 ");
+                        break;
+                    case "备货完成":
+                        sqlBuilder.append("AND b.order_status = 2 ");
+                        break;
+                    case "开始发货":
+                        sqlBuilder.append("AND b.order_status = 3 ");
+                        break;
+                    case "交易完成":
+                        sqlBuilder.append("AND b.order_status = 4 ");
+                        break;
+                    case "交易失败":
+                        sqlBuilder.append("AND b.order_status = 5 ");
+                        break;
+                    // 兼容旧的状态值
+                    case "completed":
+                        sqlBuilder.append("AND b.order_status >= 1 ");
+                        break;
+                    case "pending":
+                        sqlBuilder.append("AND b.order_status = 0 ");
+                        break;
+                    case "failed":
+                        sqlBuilder.append("AND b.order_status = 5 ");
+                        break;
+                }
             }
         }
         

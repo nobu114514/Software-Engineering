@@ -99,4 +99,17 @@ public class ProductService {
         }
         return null;
     }
+    
+    // 添加搜索功能
+    public List<Product> searchProducts(String keyword) {
+        return productRepository.findByNameContainingIgnoreCaseAndIsActiveTrueOrderByCreatedAtDesc(keyword);
+    }
+    
+    public List<Product> searchProductsBySubCategory(Long subCategoryId, String keyword) {
+        return productRepository.findBySubCategoryIdAndNameContainingIgnoreCaseAndIsActiveTrueOrderByCreatedAtDesc(subCategoryId, keyword);
+    }
+    
+    public List<Product> searchProductsByCategory(Long categoryId, String keyword) {
+        return productRepository.findBySubCategoryCategoryIdAndNameContainingIgnoreCaseAndIsActiveTrueOrderByCreatedAtDesc(categoryId, keyword);
+    }
 }

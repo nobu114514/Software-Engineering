@@ -15,6 +15,7 @@ import SellerCategories from '../views/SellerCategories.vue'
 import SellerSubCategories from '../views/SellerSubCategories.vue'
 import StockLogs from '../views/StockLogs.vue'
 import FavoriteProducts from '../views/FavoriteProducts.vue'
+import Cart from '../views/Cart.vue'
 
 const routes = [
   {
@@ -82,11 +83,15 @@ const routes = [
     component: CustomerOrders,
     meta: { requiresAuth: true, role: 'customer' }
   },
-  {
-    path: '/favorites',
+  {    path: '/favorites',
     name: 'favoriteProducts',
     component: FavoriteProducts,
     meta: { requiresAuth: true, role: 'customer' }
+  },
+  {
+    path: '/cart',
+    name: 'cart',
+    component: Cart
   },
   {
     path: '/seller/customers',

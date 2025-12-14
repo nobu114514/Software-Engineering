@@ -19,6 +19,8 @@ public class Product {
     
     private double price;
     
+    private int stock; // 商品库存
+    
     private boolean isActive; // 商品是否上线
     
     private boolean isFrozen; // 商品是否冻结（交易中）
@@ -70,6 +72,14 @@ public class Product {
 
     public void setPrice(double price) {
         this.price = price;
+    }
+
+    public int getStock() {
+        return stock;
+    }
+
+    public void setStock(int stock) {
+        this.stock = stock;
     }
 
     public boolean isActive() {

@@ -19,4 +19,9 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     // 添加通过一级分类ID获取商品的方法
     List<Product> findBySubCategoryCategoryId(Long categoryId);
     List<Product> findBySubCategoryCategoryIdAndIsActiveTrue(Long categoryId); // 获取指定一级分类的上架商品
+    
+    // 添加搜索功能
+    List<Product> findByNameContainingIgnoreCaseAndIsActiveTrueOrderByCreatedAtDesc(String keyword);
+    List<Product> findBySubCategoryIdAndNameContainingIgnoreCaseAndIsActiveTrueOrderByCreatedAtDesc(Long subCategoryId, String keyword);
+    List<Product> findBySubCategoryCategoryIdAndNameContainingIgnoreCaseAndIsActiveTrueOrderByCreatedAtDesc(Long categoryId, String keyword);
 }

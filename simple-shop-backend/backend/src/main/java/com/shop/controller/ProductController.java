@@ -154,6 +154,49 @@ public class ProductController {
                 })
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
+    
+    // 搜索商品API
+    @GetMapping("/search")
+    public ResponseEntity<List<Product>> searchProducts(@RequestParam String keyword) {
+        List<Product> products = productService.searchProducts(keyword);
+        // 清除循环引用
+        for (Product product : products) {
+            if (product.getSubCategory() != null) {
+                product.getSubCategory().setCategory(null);
+            }
+        }
+        return ResponseEntity.ok(products);
+    }
+    
+    // 按子分类搜索商品API
+    @GetMapping("/sub-category/{subCategoryId}/search")
+    public ResponseEntity<List<Product>> searchProductsBySubCategory(
+            @PathVariable Long subCategoryId, 
+            @RequestParam String keyword) {
+        List<Product> products = productService.searchProductsBySubCategory(subCategoryId, keyword);
+        // 清除循环引用
+        for (Product product : products) {
+            if (product.getSubCategory() != null) {
+                product.getSubCategory().setCategory(null);
+            }
+        }
+        return ResponseEntity.ok(products);
+    }
+    
+    // 按分类搜索商品API
+    @GetMapping("/category/{categoryId}/search")
+    public ResponseEntity<List<Product>> searchProductsByCategory(
+            @PathVariable Long categoryId, 
+            @RequestParam String keyword) {
+        List<Product> products = productService.searchProductsByCategory(categoryId, keyword);
+        // 清除循环引用
+        for (Product product : products) {
+            if (product.getSubCategory() != null) {
+                product.getSubCategory().setCategory(null);
+            }
+        }
+        return ResponseEntity.ok(products);
+    }
 
     @PutMapping("/{id}/freeze")
     public ResponseEntity<Boolean> freezeProduct(@PathVariable Long id, @RequestParam boolean freeze) {

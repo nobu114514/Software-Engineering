@@ -93,7 +93,7 @@ export default {
   },
   computed: {
     isLoggedIn() {
-      return typeof localStorage !== 'undefined' && localStorage.getItem('customerLoggedIn');
+      return typeof localStorage !== 'undefined' && localStorage.getItem('customerToken');
     }
   },
   created() {
@@ -102,7 +102,7 @@ export default {
   methods: {
     // 加载用户收藏的商品列表
     async loadFavoriteProducts() {
-      if (!localStorage.getItem('customerLoggedIn')) {
+      if (!localStorage.getItem('customerToken')) {
         this.loading = false;
         return;
       }

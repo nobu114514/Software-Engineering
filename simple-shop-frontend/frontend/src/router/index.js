@@ -132,14 +132,14 @@ router.beforeEach((to, from, next) => {
     const record = to.matched.find(r => r.meta.role);
     // 检查是否需要卖家登录
     if (record && record.meta.role === 'seller') {
-      if (!localStorage.getItem('sellerLoggedIn')) {
+      if (!localStorage.getItem('sellerToken')) {
         next({ name: 'sellerLogin' })
       } else {
         next()
       }
     } else {
       // 其他需要登录的页面（客户）
-      if (!localStorage.getItem('customerLoggedIn')) {
+      if (!localStorage.getItem('customerToken')) {
         next({ name: 'customerLogin' })
       } else {
         next()

@@ -347,7 +347,7 @@ export default {
     
     // 检查商品是否已收藏
     async checkIfFavorited() {
-      if (!localStorage.getItem('customerLoggedIn')) return false;
+      if (!localStorage.getItem('customerToken')) return false;
       
       try {
         const username = localStorage.getItem('customerUsername');
@@ -361,7 +361,7 @@ export default {
     
     // 切换收藏状态
     async toggleFavorite() {
-      if (!localStorage.getItem('customerLoggedIn')) {
+      if (!localStorage.getItem('customerToken')) {
         this.error = '未登录，跳转至登录界面';
         setTimeout(() => {
           this.$router.push('/login');

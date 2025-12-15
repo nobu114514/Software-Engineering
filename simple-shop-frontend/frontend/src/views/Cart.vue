@@ -65,6 +65,14 @@
         <div class="cart-actions">
           <button class="btn" @click="clearCart">清空购物车</button>
           <button class="btn btn-primary" @click="checkout">去结算</button>
+          <button 
+            class="btn batch-favorite-btn" 
+            @click="batchFavorite" 
+            :disabled="selectedItems.length === 0"
+            :class="{ 'active': selectedItems.length > 0 }"
+          >
+            批量收藏
+          </button>
         </div>
       </div>
     </div>
@@ -261,6 +269,47 @@ export default {
         console.error('批量下单失败:', error);
         alert('批量下单失败，请稍后重试。');
       }
+    },
+    
+    // 批量收藏功能
+    async batchFavorite() {
+      // 检查用户是否登录
+      if (!localStorage.getItem('customerToken')) {
+        alert('请先登录再进行收藏操作');
+        this.$router.push('/login');
+        return;
+      }
+      
+      try {
+        const username = localStorage.getItem('customerUsername');
+        let successCount = 0;
+        
+        // 对每个选中的商品进行收藏
+        for (const productId of this.selectedItems) {
+          try {
+            // 检查商品是否已收藏
+            const checkResponse = await this.$axios.get(`http://localhost:8081/api/favorites/${username}/${productId}`);
+            
+            if (!checkResponse.data.isFavorited) {
+              // 商品未收藏，添加收藏
+              await this.$axios.post(`http://localhost:8081/api/favorites/${username}/${productId}`);
+              successCount++;
+            }
+          } catch (err) {
+            console.error(`收藏商品 ${productId} 失败:`, err);
+          }
+        }
+        
+        // 显示收藏结果
+        if (successCount > 0) {
+          alert(`已成功收藏 ${successCount} 件商品！`);
+        } else {
+          alert('所有选中的商品都已在收藏夹中');
+        }
+      } catch (error) {
+        console.error('批量收藏失败:', error);
+        alert('批量收藏失败，请稍后重试。');
+      }
     }
   }
 };
@@ -456,5 +505,22 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* 批量收藏按钮样式 */
+.batch-favorite-btn {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.batch-favorite-btn.active {
+  background-color: #ffc107;
+  color: #333;
+  cursor: pointer;
+}
+
+.batch-favorite-btn.active:hover {
+  background-color: #e0a800;
 }
 </style>

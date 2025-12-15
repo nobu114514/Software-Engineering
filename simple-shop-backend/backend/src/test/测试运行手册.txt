@@ -1,0 +1,150 @@
+# 单元测试用例自动化运行手册
+
+## 1. 环境准备
+
+### 1.1 前置依赖
+- JDK 11+（确保 `JAVA_HOME` 环境变量配置正确）
+- MySQL 8.0+（用于数据库库连接信息需与后端配置一致）
+- Node.js 14+（用于前端依赖安装和运行）
+- Maven 3.6+（用于后端项目构建和测试）
+- IDE（推荐IntelliJ IDEA或VS Code，需安装JUnit、Vue相关插件）
+- Selenium：4.33.0（Web 自动化测试框架）
+- JUnit 5：5.10.0（单元测试框架，用于编写和执行测试用例）
+- WebDriverManager：5.5.3（自动管理浏览器驱动版本）
+
+### 1.2 项目初始化
+1. **数据库配置**
+   - 按照 `Software-Engineering/litemall/说明.txt` 执行数据库初始化：
+     ```sql
+     -- 创建数据库
+     CREATE DATABASE simple_shop CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+     -- 执行表结构脚本（包含product、purchase_intention、seller等表）
+     -- 初始化卖家数据（用户名：seller，密码：123）
+     ```
+   - 修改后端配置文件 `src/main/resources/application.properties`，更新数据库连接信息：
+     ```properties
+     spring.datasource.url=jdbc:mysql://localhost:3306/simple_shop?useSSL=false&serverTimezone=UTC
+     spring.datasource.username=你的MySQL用户名
+     spring.datasource.password=你的MySQL密码
+     ```
+
+2. **后端项目构建**
+   - 进入后端项目根目录（包含 `pom.xml` 的目录）：
+     ```bash
+     # 构建项目并运行单元测试
+     mvn clean package
+     # 跳过测试直接构建
+     mvn clean package -DskipTests
+     ```
+
+3. **前端项目准备**
+   - 进入前端项目目录 `simple-shop-frontend/frontend`：
+     ```bash
+     # 安装依赖
+     npm install
+     # 安装开发依赖（如已在说明.txt中提及）
+     npm install --save-dev eslint eslint-plugin-vue @babel/eslint-parser @babel/core @babel/preset-env
+     ```
+4. **测试数据预处理**
+    -买家功能测试（BuyerOrderTest.java）：在数据库 product 表中插入测试商品，确保存在「商品名称为 6、商品描述为 6」的记录（可直接执行 SQL 插入）：
+    sql
+    INSERT INTO product (product_name, product_desc, price, stock)
+    VALUES ('6', '6', 99.0, 100);
+    -卖家功能测试（SellerProductTest.java）：
+    将 product 表中指定商品的 is_frozen 字段设为 1（冻结状态），用于测试 “冻结商品” 相关功能。
+    确保商品操作历史表（如 product_history）存在对应记录（可先手动操作一次商品，生成历史数据），避免 “查看历史” 功能测试因无数据失败
+
+## 2. 自动化测试范围
+
+### 2.1 后端接口测试
+- 基于 JUnit 5 + Spring MockMvc 的接口功能测试
+- 核心测试类：`com.shop.test.buyer.BuyerFunctionTest`
+
+### 2.2 Web UI 自动化测试
+  基于 Selenium 4.33.0 + JUnit 5 的前端页面操作测试
+  核心测试类及对应范围：
+  com.shop.test.maven.SellerLoginTest.java：卖家登录功能（登录成功 / 失败场景）
+  com.shop.test.maven.BuyerOrderTest.java：买家功能（商品浏览、下单、订单查询等）
+  com.shop.test.maven.SellerProductTest.java：卖家功能页（商品管理、冻结商品、查看操作历史等）
+
+## 3. 自动化测试运行步骤
+
+### 3.1 后端接口测试运行
+
+#### 方式1：通过IDE运行
+1. 打开后端项目（`simple-shop-backend`）
+2. 定位到测试类目录
+3. 右键点击目标测试类
+4. 选择 "Run Tests" 或 "Debug Tests" 执行测试
+
+#### 方式2：通过Maven命令运行
+```bash
+# 运行所有测试
+mvn test
+
+# 运行指定测试类
+mvn test -Dtest=BuyerFunctionTest
+
+# 运行指定测试方法
+mvn test -Dtest=BuyerFunctionTest#testSubmitPurchaseIntention
+```
+
+
+### 3.2 测试结果查看
+1. **控制台输出**：测试通过/失败的用例数、错误信息（如 `No value at JSON path "$.isFrozen"` 等）
+2. **测试报告**：Maven 会在 `target/surefire-reports` 目录生成 HTML/XML 格式报告，可直接打开查看详情
+3. **浏览器运行日志**：Web UI 测试执行时，会自动启动 Chrome 浏览器，实时显示页面操作过程；若测试失败，Selenium 会在控制台输出 “元素定位失败”“超时” 等关键日志，可据此排查问题
+
+## 4. 常见问题及解决
+
+### 4.1 数据库相关问题
+- **问题**：测试时数据库连接失败
+  **解决**：检查 `application.properties` 中数据库地址、用户名、密码是否正确；确保MySQL服务已启动。
+
+- **问题**：测试数据冲突（如重复插入初始卖家数据）
+  **解决**：在测试类中添加 `@BeforeEach` 注解的方法，初始化测试数据前清理表数据：
+  ```java
+  @BeforeEach
+  void setUp() {
+      jdbcTemplate.update("DELETE FROM purchase_intention");
+      jdbcTemplate.update("DELETE FROM product");
+  }
+  ```
+
+### 4.2 接口测试断言失败
+- **问题**：接口返回状态码不符合预期（如 404 而非 200）
+  **解决**：检查测试中请求的接口路径是否正确（如 `/buyers/product/1` 是否存在），或后端控制器是否正确映射该路径。
+
+
+### 4.3 前端依赖安装失败
+- **问题**：`npm install` 时报错
+  **解决**：清除 npm 缓存后重试：
+  ```bash
+  npm cache clean --force
+  npm install
+  ```
+### 4.4 csv无法读取问题
+- **问题**：csv编码错误
+  **解决**：在「Text file encoding」中选择「Other」→「UTF-8」，点击「Apply and Close」
+
+### 4.5 ChromeDriver 版本不匹配
+- **问题**：Selenium 提示 “ChromeDriver 版本不匹配”
+  **解决**：WebDriverManager 5.5.3 会自动匹配 Chrome 版本，若仍报错，需手动更新 Chrome 浏览器到最新版，或在测试代码中指定 Chrome 版本：
+         运行
+         import io.github.bonigarcia.wdm.WebDriverManager;
+         import org.openqa.selenium.chrome.ChromeDriver;
+
+         @BeforeEach
+         void setUp() {
+             // 手动指定Chrome版本（根据实际安装的Chrome版本调整，如141.0.7390.77）
+             WebDriverManager.chromedriver().browserVersion("141.0.7390.77").setup();
+             driver = new ChromeDriver();
+         }
+
+### 4.6 页面元素定位失败
+- **问题**：控制台提示 NoSuchElementException
+  **解决**：检查测试代码中元素定位器（如 By.id("username")、By.xpath("//button[text()='登录']")）是否与前端页面 HTML 元素的 id、xpath 一致
+
+### 4.7 依赖相关问题
+- **问题**：找不到 JUnit 5 相关类”（如 org.junit.jupiter.api.Test 不存在）
+  **解决**：右键项目→「Build Path」→「Add Libraries」→「JUnit」→选择「JUnit 5」，点击「Finish」添加依赖

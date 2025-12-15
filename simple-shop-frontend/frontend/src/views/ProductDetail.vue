@@ -72,14 +72,27 @@
             该商品已售罄，请稍后再试。
           </div>
 
-          <!-- 只有商品有库存，才显示购买按钮 -->
-          <button
-            class="buy-btn"
-            @click="handleBuyClick"
-            v-if="product.stock > 0"
-          >
-            我要购买
-          </button>
+          <!-- 购买按钮和收藏按钮 -->
+          <div class="product-actions">
+            <!-- 只有商品有库存，才显示购买按钮 -->
+            <button
+              class="buy-btn"
+              @click="handleBuyClick"
+              v-if="product.stock > 0"
+            >
+              我要购买
+            </button>
+            
+            <!-- 收藏按钮 -->
+            <button
+              class="favorite-btn"
+              @click="toggleFavorite"
+              :class="{ 'favorited': isFavorited }"
+            >
+              <span class="favorite-icon">{{ isFavorited ? '★' : '☆' }}</span>
+              {{ isFavorited ? '已收藏' : '收藏' }}
+            </button>
+          </div>
           
           <div class="product-meta">
             <p class="meta-item">上架时间: {{ formatDate(product.createdAt) }}</p>
@@ -173,6 +186,7 @@ export default {
       showCarousel: false,     // 是否显示图片轮播
       currentImageIndex: 0,    // 当前图片索引
       allProductImages: [],    // 所有商品图片URL列表
+      isFavorited: false,      // 当前商品是否已收藏
       buyer: {
         name: '',
         phone: '',
@@ -196,10 +210,12 @@ export default {
       this.loading = false;
     }
   },
+  
   watch: {
     product(newVal) {
       if (newVal) {
         this.extractImagesFromDescription();
+        this.checkIfFavorited();
       }
     }
   },
@@ -327,6 +343,50 @@ export default {
       if (!dateString) return '-';
       const date = new Date(dateString);
       return date.toLocaleDateString('zh-CN');
+    },
+    
+    // 检查商品是否已收藏
+    async checkIfFavorited() {
+      if (!localStorage.getItem('customerLoggedIn')) return false;
+      
+      try {
+        const username = localStorage.getItem('customerUsername');
+        const response = await this.$axios.get(`http://localhost:8081/api/favorites/${username}/${this.product.id}`);
+        this.isFavorited = response.data.isFavorited;
+      } catch (err) {
+        console.error('检查收藏状态失败:', err);
+        this.isFavorited = false;
+      }
+    },
+    
+    // 切换收藏状态
+    async toggleFavorite() {
+      if (!localStorage.getItem('customerLoggedIn')) {
+        this.error = '未登录，跳转至登录界面';
+        setTimeout(() => {
+          this.$router.push('/login');
+        }, 2000);
+        return;
+      }
+      
+      try {
+        const username = localStorage.getItem('customerUsername');
+        
+        if (this.isFavorited) {
+          // 取消收藏
+          await this.$axios.delete(`http://localhost:8081/api/favorites/${username}/${this.product.id}`);
+          this.isFavorited = false;
+          alert('取消收藏成功');
+        } else {
+          // 添加收藏
+          await this.$axios.post(`http://localhost:8081/api/favorites/${username}/${this.product.id}`);
+          this.isFavorited = true;
+          alert('收藏成功');
+        }
+      } catch (err) {
+        console.error('切换收藏状态失败:', err);
+        this.error = '操作失败，请稍后重试';
+      }
     }
   }
 }
@@ -478,6 +538,12 @@ export default {
   color: #f44336;
 }
 
+.product-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
 .buy-btn {
   background-color: #f44336;
   color: white;
@@ -487,13 +553,43 @@ export default {
   font-size: 1.2rem;
   cursor: pointer;
   transition: background-color 0.3s;
-  margin-bottom: 2rem;
   width: 100%;
   max-width: 300px;
 }
 
 .buy-btn:hover {
   background-color: #da190b;
+}
+
+.favorite-btn {
+  background-color: #fff;
+  color: #ffc107;
+  border: 2px solid #ffc107;
+  padding: 1rem 2rem;
+  border-radius: 4px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  width: 100%;
+  max-width: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.favorite-btn:hover {
+  background-color: #fff3cd;
+}
+
+.favorite-btn.favorited {
+  background-color: #ffc107;
+  color: white;
+}
+
+.favorite-icon {
+  font-size: 1.4rem;
+  line-height: 1;
 }
 
 .product-meta {
@@ -689,7 +785,12 @@ export default {
     max-width: 100%;
   }
   
-  .buy-btn {
+  .product-actions {
+    flex-direction: column;
+  }
+  
+  .buy-btn,
+  .favorite-btn {
     max-width: 100%;
   }
 }

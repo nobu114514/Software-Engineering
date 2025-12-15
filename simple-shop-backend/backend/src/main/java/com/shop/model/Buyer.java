@@ -24,9 +24,6 @@ public class Buyer {
     
     private boolean isCompleted; // 交易是否完成
     
-    @Column(name = "order_status")
-    private Integer orderStatus; // 订单状态：0-客户下单,1-商家确认,2-备货完成,3-开始发货,4-交易完成,5-交易失败
-    
     private LocalDateTime createdAt;
     
     @Column(name = "customer_id")
@@ -89,14 +86,6 @@ public class Buyer {
         isCompleted = completed;
     }
 
-    public Integer getOrderStatus() {
-        return orderStatus;
-    }
-
-    public void setOrderStatus(Integer orderStatus) {
-        this.orderStatus = orderStatus;
-    }
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -117,6 +106,5 @@ public class Buyer {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         isCompleted = false;
-        orderStatus = 0; // 默认状态：客户下单
     }
 }

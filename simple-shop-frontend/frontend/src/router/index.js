@@ -14,6 +14,8 @@ import ProductBatchForm from '../views/ProductBatchForm.vue'
 import SellerCategories from '../views/SellerCategories.vue'
 import SellerSubCategories from '../views/SellerSubCategories.vue'
 import StockLogs from '../views/StockLogs.vue'
+import FavoriteProducts from '../views/FavoriteProducts.vue'
+import Cart from '../views/Cart.vue'
 
 const routes = [
   {
@@ -81,6 +83,16 @@ const routes = [
     component: CustomerOrders,
     meta: { requiresAuth: true, role: 'customer' }
   },
+  {    path: '/favorites',
+    name: 'favoriteProducts',
+    component: FavoriteProducts,
+    meta: { requiresAuth: true, role: 'customer' }
+  },
+  {
+    path: '/cart',
+    name: 'cart',
+    component: Cart
+  },
   {
     path: '/seller/customers',
     name: 'customerList',
@@ -120,14 +132,14 @@ router.beforeEach((to, from, next) => {
     const record = to.matched.find(r => r.meta.role);
     // 检查是否需要卖家登录
     if (record && record.meta.role === 'seller') {
-      if (!localStorage.getItem('sellerLoggedIn')) {
+      if (!localStorage.getItem('sellerToken')) {
         next({ name: 'sellerLogin' })
       } else {
         next()
       }
     } else {
       // 其他需要登录的页面（客户）
-      if (!localStorage.getItem('customerLoggedIn')) {
+      if (!localStorage.getItem('customerToken')) {
         next({ name: 'customerLogin' })
       } else {
         next()

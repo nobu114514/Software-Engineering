@@ -129,3 +129,20 @@ node_modules/            # 第三方依赖（之前已加，确认存在）
 *.cache/                 # 所有缓存文件夹
 node_modules/.cache/     # 单独忽略 ESLint 等缓存
 dist/                    # 前端打包产物
+
+# Java/Maven 编译产物
+target/
+*.class
+*.jar
+*.war
+
+# 前端产物
+node_modules/
+dist/
+build/
+*.log
+
+# IDE配置
+.idea/
+.vscode/
+*.iml

@@ -1,6 +1,5 @@
 package com.shop.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 
@@ -20,19 +19,18 @@ public class Product {
     
     private double price;
     
+    private int stock; // 商品库存
+    
     private boolean isActive; // 商品是否上线
+    
+    private boolean isFrozen; // 商品是否冻结（交易中）
     
     private LocalDateTime createdAt;
     
     private LocalDateTime updatedAt;
     
-    private int stock; // 库存数量
-    
-    private int salesCount; // 销量统计
-    
     @ManyToOne
     @JoinColumn(name = "sub_category_id")
-    @JsonIgnoreProperties({"products"})
     private SubCategory subCategory;
 
     // Getters and Setters
@@ -76,12 +74,28 @@ public class Product {
         this.price = price;
     }
 
+    public int getStock() {
+        return stock;
+    }
+
+    public void setStock(int stock) {
+        this.stock = stock;
+    }
+
     public boolean isActive() {
         return isActive;
     }
 
     public void setActive(boolean active) {
         isActive = active;
+    }
+
+    public boolean isFrozen() {
+        return isFrozen;
+    }
+
+    public void setFrozen(boolean frozen) {
+        isFrozen = frozen;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -100,22 +114,6 @@ public class Product {
         this.updatedAt = updatedAt;
     }
     
-    public int getStock() {
-        return stock;
-    }
-    
-    public void setStock(int stock) {
-        this.stock = stock;
-    }
-    
-    public int getSalesCount() {
-        return salesCount;
-    }
-    
-    public void setSalesCount(int salesCount) {
-        this.salesCount = salesCount;
-    }
-    
     public SubCategory getSubCategory() {
         return subCategory;
     }
@@ -129,7 +127,7 @@ public class Product {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         isActive = true;
-        salesCount = 0;
+        isFrozen = false;
     }
 
     @PreUpdate

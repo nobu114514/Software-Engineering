@@ -58,11 +58,11 @@ export default {
   },
   created() {
     // 如果已登录为用户，跳转到首页
-    if (localStorage.getItem('customerLoggedIn')) {
+    if (localStorage.getItem('customerToken')) {
       this.$router.push('/')
     }
     // 如果已登录为卖家，提示并跳转到首页
-    if (localStorage.getItem('sellerLoggedIn')) {
+    if (localStorage.getItem('sellerToken')) {
       this.message = '请先退出卖家登录'
       this.success = false
       setTimeout(() => {
@@ -84,9 +84,9 @@ export default {
         });
         
         const result = response.data;
-        if (result.success) {
-          // 保存登录状态
-          localStorage.setItem('customerLoggedIn', 'true');
+        if (result.success && result.token) {
+          // 保存JWT token和用户名
+          localStorage.setItem('customerToken', result.token);
           localStorage.setItem('customerUsername', this.form.username);
           
           this.success = true;
@@ -98,7 +98,7 @@ export default {
           }, 1000);
         } else {
           this.success = false;
-          this.message = result.message;
+          this.message = result.message || '用户名或密码错误';
         }
       } catch (err) {
         this.success = false;

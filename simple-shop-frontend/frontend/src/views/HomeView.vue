@@ -112,12 +112,18 @@
             </small>
           </div>
 
-          <!-- 只有商品有库存，才显示购买按钮 -->
+          <!-- 只有商品有库存，才显示购买和加入购物车按钮 -->
           <button
             class="btn"
             @click="handleBuyClick(product)"
             v-if="product.stock > 0">
             我要购买
+          </button>
+          <button
+            class="btn"
+            @click="addToCart(product)"
+            v-if="product.stock > 0">
+            加入购物车
           </button>
         </div>
       </div>
@@ -284,45 +290,29 @@ export default {
       try {
         this.loading = true;
         
-        // 构建搜索API的URL - 无论是否有搜索关键字都使用搜索API以支持排序
-        let url = 'http://localhost:8081/api/products/search';
-        let params = {
-          page: this.currentPage,
-          size: this.pageSize,
-          sortBy: this.sortBy,
-          sortDir: this.sortDirection
-        };
+        let url;
         
-        // 如果有搜索关键字，添加到参数中
-        if (this.searchKeyword && this.searchKeyword.trim()) {
-          params.keyword = this.searchKeyword.trim();
-        }
-        
-        // 根据分类选择不同的搜索API端点
+        // 根据分类选择不同的API端点
         if (this.selectedSubCategoryId) {
-          url = `http://localhost:8081/api/products/sub-category/${this.selectedSubCategoryId}/search`;
+          // 使用现有的按子分类获取上架商品端点
+          url = `http://localhost:8081/api/products/sub-category/${this.selectedSubCategoryId}/active`;
         } else if (this.selectedCategoryId) {
-          url = `http://localhost:8081/api/products/category/${this.selectedCategoryId}/search`;
-        }
-        
-        const response = await axios.get(url, { params });
-        
-        // 处理分页响应
-        if (response.data && typeof response.data === 'object' && response.data.content) {
-          // 这是分页响应
-          this.products = response.data.content;
-          this.totalPages = response.data.totalPages;
-          this.totalElements = response.data.totalElements;
-          this.currentPage = response.data.number;
+          // 使用现有的按分类获取上架商品端点
+          url = `http://localhost:8081/api/products/category/${this.selectedCategoryId}/active`;
         } else {
-          // 兼容旧的列表响应
-          const data = response.data.data || response.data;
-          const productsArray = Array.isArray(data) ? data : [data].filter(Boolean);
-          this.products = productsArray;
-          this.totalPages = 1;
-          this.totalElements = productsArray.length;
-          this.currentPage = 0;
+          // 使用现有的获取所有上架商品端点
+          url = 'http://localhost:8081/api/products/active-list';
         }
+        
+        const response = await axios.get(url);
+        
+        // 处理响应 - 后端返回的是简单的列表
+        const data = response.data.data || response.data;
+        const productsArray = Array.isArray(data) ? data : [data].filter(Boolean);
+        this.products = productsArray;
+        this.totalPages = 1;
+        this.totalElements = productsArray.length;
+        this.currentPage = 0;
       } catch (error) {
         console.error('获取商品信息失败:', error);
         this.error = '获取商品信息失败，请稍后重试。';
@@ -397,6 +387,34 @@ export default {
       if (newPage >= 0 && newPage < this.totalPages) {
         this.currentPage = newPage;
         this.fetchProducts();
+      }
+    },
+    // 购物车相关方法
+    async addToCart(product) {
+      try {
+        // 获取当前登录的用户名并进行编码，确保符合HTTP请求头的ISO-8859-1编码要求
+        const username = localStorage.getItem('customerUsername')
+        const encodedUsername = encodeURIComponent(username || '')
+        const response = await this.$axios.post('/cart/add', {
+          productId: product.id,
+          quantity: 1
+        }, {
+          headers: {
+            'X-Username': encodedUsername
+          }
+        });
+        
+        if (response.data.success) {
+          // 显示成功提示
+          alert(response.data.message + '\n购物车商品项数: ' + response.data.cartSize + '\n商品总数量: ' + response.data.totalQuantity);
+          console.log('购物车大小:', response.data.cartSize);
+          console.log('商品总数量:', response.data.totalQuantity);
+        } else {
+          alert('错误: ' + response.data.message);
+        }
+      } catch (error) {
+        console.error('加入购物车失败:', error);
+        alert('加入购物车失败，请稍后重试。');
       }
     }
   }

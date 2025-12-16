@@ -11,6 +11,8 @@
           <!-- 用户已登录状态 -->
           <span v-if="isCustomerLoggedIn">{{ customerUsername || '用户' }}</span>
           <a href="/orders" v-if="isCustomerLoggedIn" class="navbar-link">我的订单</a>
+          <a href="/favorites" v-if="isCustomerLoggedIn" class="navbar-link">我的收藏</a>
+          <a href="/cart" v-if="isCustomerLoggedIn" class="navbar-link">购物车</a>
           <button @click="customerLogout" v-if="isCustomerLoggedIn" class="navbar-btn">退出登录</button>
           
           <!-- 卖家入口 - 未登录状态且用户未登录时显示 -->
@@ -45,20 +47,21 @@ export default {
   methods: {
     checkLoginStatus() {
       // 检查卖家登录状态
-      this.isSellerLoggedIn = !!localStorage.getItem('sellerLoggedIn')
+      this.isSellerLoggedIn = !!localStorage.getItem('sellerToken')
       // 检查客户登录状态
-      this.isCustomerLoggedIn = !!localStorage.getItem('customerLoggedIn')
+      this.isCustomerLoggedIn = !!localStorage.getItem('customerToken')
       this.customerUsername = localStorage.getItem('customerUsername') || ''
     },
     // 卖家退出登录
     sellerLogout() {
-      localStorage.removeItem('sellerLoggedIn')
+      localStorage.removeItem('sellerToken')
+      localStorage.removeItem('sellerUsername')
       this.isSellerLoggedIn = false
       this.$router.push('/seller/login')
     },
     // 客户退出登录
     customerLogout() {
-      localStorage.removeItem('customerLoggedIn')
+      localStorage.removeItem('customerToken')
       localStorage.removeItem('customerUsername')
       this.isCustomerLoggedIn = false
       this.customerUsername = ''

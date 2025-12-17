@@ -238,7 +238,7 @@ export default {
     // 提交购买意向
     async submitBuy() {
       // 再次检查用户是否已登录（防止绕过前端验证）
-      if (!localStorage.getItem('customerLoggedIn')) {
+      if (!localStorage.getItem('customerToken')) {
         this.error = '未登录，跳转至登录界面';
         // 2秒后跳转到登录页面
         setTimeout(() => {
@@ -286,7 +286,7 @@ export default {
     // 处理购买按钮点击事件
     handleBuyClick() {
       // 检查用户是否已登录
-      if (!localStorage.getItem('customerLoggedIn')) {
+      if (!localStorage.getItem('customerToken')) {
         // 未登录，显示提示信息
         this.error = '未登录，跳转至登录界面';
         // 2秒后跳转到登录页面

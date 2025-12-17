@@ -333,7 +333,7 @@ export default {
     },
     async submitBuy() {
       // 再次检查用户是否已登录（防止绕过前端验证）
-      if (!localStorage.getItem('customerLoggedIn')) {
+      if (!localStorage.getItem('customerToken')) {
         this.error = '未登录，跳转至登录界面'
         // 2秒后跳转到登录页面
         setTimeout(() => {
@@ -817,3 +817,4 @@ export default {
   }
 }
 </style>
+

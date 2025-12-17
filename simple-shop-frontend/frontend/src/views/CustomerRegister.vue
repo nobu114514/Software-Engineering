@@ -85,17 +85,7 @@ export default {
     }
   },
   created() {
-    // 如果已登录为用户，跳转到首页
-    if (localStorage.getItem('customerLoggedIn')) {
-      this.$router.push('/')
-    }
-    // 如果已登录为卖家，提示并跳转到首页
-    if (localStorage.getItem('sellerLoggedIn')) {
-      this.errorMessage = '请先退出卖家登录'
-      setTimeout(() => {
-        this.$router.push('/')
-      }, 2000)
-    }
+    // 删除所有可能导致自动跳转的代码，只保留必要的初始化逻辑
   },
   methods: {
     // 客户端验证
@@ -172,9 +162,9 @@ export default {
           }
         });
         
-        if (response.data.success) {
-          // 保存登录状态
-          localStorage.setItem('customerLoggedIn', 'true');
+        if (response.data.success && response.data.token) {
+          // 保存登录状态和token，与CustomerLogin.vue保持一致
+          localStorage.setItem('customerToken', response.data.token);
           localStorage.setItem('customerUsername', this.form.username);
           
           // 跳转到首页

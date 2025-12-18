@@ -1,7 +1,9 @@
 package com.shop.service;
 
+import com.shop.model.Customer;
 import com.shop.model.Favorite;
 import com.shop.model.Product;
+import com.shop.repository.CustomerRepository;
 import com.shop.repository.FavoriteRepository;
 import com.shop.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,9 @@ public class FavoriteService {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private CustomerRepository customerRepository;
+
     // 添加收藏
     @Transactional
     public Favorite addFavorite(String username, Long productId) {
@@ -26,14 +31,27 @@ public class FavoriteService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("商品不存在"));
 
+        // 检查商品是否活跃
+        if (!product.isActive()) {
+            throw new RuntimeException("商品已下架，无法收藏");
+        }
+
         // 检查是否已经收藏
         Optional<Favorite> existing = favoriteRepository.findByUsernameAndProductId(username, productId);
         if (existing.isPresent()) {
             throw new RuntimeException("商品已经在收藏列表中");
         }
 
+        // 查询客户信息，获取customerId
+        Optional<Customer> customerOpt = customerRepository.findByUsername(username);
+        if (!customerOpt.isPresent()) {
+            throw new RuntimeException("客户不存在");
+        }
+        Customer customer = customerOpt.get();
+
         // 创建新收藏
         Favorite favorite = new Favorite(username, product);
+        favorite.setCustomerId(customer.getId());
         return favoriteRepository.save(favorite);
     }
 

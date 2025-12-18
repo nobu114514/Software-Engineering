@@ -33,6 +33,29 @@ axios.interceptors.request.use(
   }
 )
 
+// 添加响应拦截器，处理401错误
+axios.interceptors.response.use(
+  response => {
+    return response
+  },
+  error => {
+    if (error.response && error.response.status === 401) {
+      // 清除localStorage中的token
+      localStorage.removeItem('sellerToken')
+      localStorage.removeItem('sellerUsername')
+      localStorage.removeItem('customerToken')
+      localStorage.removeItem('customerUsername')
+      
+      // 跳转到登录页面
+      router.push('/login')
+      
+      // 显示错误信息
+      alert('登录已过期，请重新登录')
+    }
+    return Promise.reject(error)
+  }
+)
+
 // 全局注册axios
 const app = createApp(App)
 app.config.globalProperties.$axios = axios

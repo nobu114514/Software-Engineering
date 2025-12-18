@@ -14,6 +14,10 @@ public class Favorite {
     @Column(name = "username", nullable = false)
     private String username;
 
+    // 添加customer_id字段，与数据库表结构匹配
+    @Column(name = "customer_id", nullable = true) // 允许为null，因为旧数据可能没有这个字段
+    private Long customerId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     @JsonIgnore
@@ -48,6 +52,14 @@ public class Favorite {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public Long getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(Long customerId) {
+        this.customerId = customerId;
     }
 
     public Product getProduct() {

@@ -224,12 +224,18 @@ export default {
     async fetchProduct(id) {
       try {
         this.loading = true;
-        const response = await this.$axios.get(`http://localhost:8081/api/products/${id}`);
+        console.log('获取商品信息：', id);
+        const response = await this.$axios.get(`/products/${id}`);
+        console.log('获取商品信息成功：', response.data);
         this.product = response.data;
         this.error = '';
       } catch (err) {
+        console.error('获取商品信息失败：', {
+          error: err,
+          response: err.response ? err.response.data : '无响应数据',
+          status: err.response ? err.response.status : '无状态码'
+        });
         this.error = '获取商品信息失败';
-        console.error(err);
       } finally {
         this.loading = false;
       }
@@ -351,10 +357,25 @@ export default {
       
       try {
         const username = localStorage.getItem('customerUsername');
-        const response = await this.$axios.get(`http://localhost:8081/api/favorites/${username}/${this.product.id}`);
+        
+        if (!username) {
+          return false;
+        }
+        
+        console.log('检查收藏状态：', {
+          username: username,
+          productId: this.product.id
+        });
+        
+        const response = await this.$axios.get(`/favorites/${username}/${this.product.id}`);
         this.isFavorited = response.data.isFavorited;
+        console.log('检查收藏状态成功:', response.data);
       } catch (err) {
-        console.error('检查收藏状态失败:', err);
+        console.error('检查收藏状态失败:', {
+          error: err,
+          response: err.response ? err.response.data : '无响应数据',
+          status: err.response ? err.response.status : '无状态码'
+        });
         this.isFavorited = false;
       }
     },
@@ -372,20 +393,65 @@ export default {
       try {
         const username = localStorage.getItem('customerUsername');
         
+        if (!username) {
+          this.error = '用户名不存在，请重新登录';
+          setTimeout(() => {
+            this.$router.push('/login');
+          }, 2000);
+          return;
+        }
+        
+        console.log('收藏操作：', {
+          username: username,
+          productId: this.product.id,
+          isFavorited: this.isFavorited
+        });
+        
+        let response;
         if (this.isFavorited) {
           // 取消收藏
-          await this.$axios.delete(`http://localhost:8081/api/favorites/${username}/${this.product.id}`);
+          response = await this.$axios.delete(`/favorites/${username}/${this.product.id}`);
           this.isFavorited = false;
           alert('取消收藏成功');
         } else {
           // 添加收藏
-          await this.$axios.post(`http://localhost:8081/api/favorites/${username}/${this.product.id}`);
+          response = await this.$axios.post(`/favorites/${username}/${this.product.id}`);
           this.isFavorited = true;
           alert('收藏成功');
         }
+        
+        console.log('收藏操作成功:', response.data);
       } catch (err) {
-        console.error('切换收藏状态失败:', err);
-        this.error = '操作失败，请稍后重试';
+        console.error('切换收藏状态失败:', {
+          error: err,
+          response: err.response ? err.response.data : '无响应数据',
+          status: err.response ? err.response.status : '无状态码'
+        });
+        
+        // 处理业务逻辑错误
+        if (err.response && err.response.data && err.response.data.message) {
+          const errorMessage = err.response.data.message;
+          if (errorMessage === '商品已经在收藏列表中') {
+            // 商品已经被收藏，更新UI状态为已收藏
+            this.isFavorited = true;
+            alert('商品已经在收藏列表中');
+          } else if (errorMessage === '商品不存在' || errorMessage === '商品已下架，无法收藏') {
+            // 商品不存在或已下架
+            alert(errorMessage);
+          } else if (errorMessage === '客户不存在') {
+            // 客户不存在，需要重新登录
+            this.error = '用户名不存在，请重新登录';
+            setTimeout(() => {
+              this.$router.push('/login');
+            }, 2000);
+          } else {
+            // 其他错误
+            alert(errorMessage);
+          }
+        } else {
+          // 网络错误或其他未知错误
+          alert('操作失败，请稍后重试');
+        }
       }
     }
   }

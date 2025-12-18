@@ -124,6 +124,23 @@ const router = createRouter({
   routes
 })
 
+// 解析JWT token，检查是否过期
+function isTokenExpired(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    
+    const payload = JSON.parse(jsonPayload);
+    const exp = payload.exp * 1000; // 转换为毫秒
+    return Date.now() > exp;
+  } catch (error) {
+    return true; // 解析失败视为过期
+  }
+}
+
 // 路由守卫，检查是否已登录
 router.beforeEach((to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
@@ -132,14 +149,22 @@ router.beforeEach((to, from, next) => {
     const record = to.matched.find(r => r.meta.role);
     // 检查是否需要卖家登录
     if (record && record.meta.role === 'seller') {
-      if (!localStorage.getItem('sellerToken')) {
+      const sellerToken = localStorage.getItem('sellerToken');
+      if (!sellerToken || isTokenExpired(sellerToken)) {
+        // 清除过期token
+        localStorage.removeItem('sellerToken');
+        localStorage.removeItem('sellerUsername');
         next({ name: 'sellerLogin' })
       } else {
         next()
       }
     } else {
       // 其他需要登录的页面（客户）
-      if (!localStorage.getItem('customerToken')) {
+      const customerToken = localStorage.getItem('customerToken');
+      if (!customerToken || isTokenExpired(customerToken)) {
+        // 清除过期token
+        localStorage.removeItem('customerToken');
+        localStorage.removeItem('customerUsername');
         next({ name: 'customerLogin' })
       } else {
         next()

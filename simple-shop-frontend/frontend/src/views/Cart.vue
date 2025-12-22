@@ -76,6 +76,45 @@
         </div>
       </div>
     </div>
+    
+    <!-- 购买表单弹窗 -->
+    <div v-if="showBuyForm" class="modal-overlay">
+      <div class="buy-form card modal-content">
+        <h2>购买信息</h2>
+        <form @submit.prevent="submitBuy">
+          <div class="form-group">
+            <label for="name">姓名</label>
+            <input type="text" id="name" v-model="buyer.name" required>
+          </div>
+          <div class="form-group">
+            <label for="phone">电话</label>
+            <input type="tel" id="phone" v-model="buyer.phone" required>
+          </div>
+          <div class="form-group">
+            <label for="address">地址</label>
+            <textarea id="address" v-model="buyer.address" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="notes">备注</label>
+            <textarea id="notes" v-model="buyer.notes"></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn">提交购买意向</button>
+            <button type="button" class="btn btn-secondary" @click="showBuyForm = false">取消</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- 提交成功提示 -->
+    <div v-if="buySuccess" class="alert alert-success">
+      购买意向已提交，请等待卖家联系进行线下交易。
+    </div>
+    
+    <!-- 错误提示 -->
+    <div v-if="error" class="alert alert-danger">
+      {{ error }}
+    </div>
   </div>
 </template>
 
@@ -91,7 +130,17 @@ export default {
       totalAmount: 0,
       loading: true,
       selectedItems: [], // 存储选中的商品ID列表
-      isAllSelected: false // 全选状态
+      isAllSelected: false, // 全选状态
+      // 购买表单相关
+      showBuyForm: false,
+      buySuccess: false,
+      error: '',
+      buyer: {
+        name: '',
+        phone: '',
+        address: '',
+        notes: ''
+      }
     };
   },
   created() {
@@ -131,6 +180,15 @@ export default {
     
     async updateQuantity(productId, quantity) {
       try {
+        // 获取当前商品信息
+        const item = this.cartItems.find(item => item.productId === productId);
+        if (!item) return;
+        
+        // 在前端先检查数量是否合理
+        if (quantity <= 0) {
+          quantity = 1; // 保证至少购买1件
+        }
+        
         const username = localStorage.getItem('customerUsername');
         const encodedUsername = encodeURIComponent(username || '');
         const response = await this.$axios.put('/cart/update', {
@@ -151,7 +209,7 @@ export default {
         }
       } catch (error) {
         console.error('更新数量失败:', error);
-        alert('更新数量失败，请稍后重试。');
+        alert('更新数量失败: ' + (error.response?.data?.message || '请稍后重试'));
       }
     },
     
@@ -228,46 +286,102 @@ export default {
         return;
       }
       
-      // 确认是否要结算
-      if (!confirm('确定要购买选中的商品吗？')) {
+      // 检查用户是否已登录
+      if (!localStorage.getItem('customerLoggedIn')) {
+        this.error = '未登录，跳转至登录界面';
+        // 2秒后跳转到登录页面
+        setTimeout(() => {
+          this.$router.push('/login');
+        }, 2000);
         return;
       }
       
+      // 显示购买表单
+      this.showBuyForm = true;
+    },
+    
+    async submitBuy() {
       try {
-        // 从localStorage获取当前登录用户名
+        // 从localStorage获取当前登录用户名并进行编码
         const username = localStorage.getItem('customerUsername');
         const encodedUsername = encodeURIComponent(username || '');
         
-        // 准备请求数据：选中的商品ID列表
-        const requestData = {
-          productIds: this.selectedItems
-        };
+        // 获取选中的商品项
+        const selectedCartItems = [...this.cartItems.filter(item => this.selectedItems.includes(item.productId))];
         
-        // 调用后端API进行批量下单
-        const response = await this.$axios.post('/orders/create', requestData, {
-          headers: {
-            'X-Username': encodedUsername
+        // 准备统计信息
+        let successCount = 0;
+        let failCount = 0;
+        const failedProducts = [];
+        
+        // 遍历每个选中的商品项
+        for (const item of selectedCartItems) {
+          // 按照商品数量循环提交购买意向，每次只提交一个商品ID
+          for (let i = 0; i < item.quantity; i++) {
+            try {
+              // 准备请求数据
+              const buyRequest = { ...this.buyer };
+              
+              // 调用后端API提交单个商品的购买意向（模仿HomeView的实现）
+              await this.$axios.post(`/buyers/product/${item.productId}`, buyRequest, {
+                headers: {
+                  'X-Username': encodedUsername
+                }
+              });
+              
+              // 下单成功
+              successCount++;
+            } catch (err) {
+              // 下单失败
+              failCount++;
+              failedProducts.push(item.productName);
+              console.error(`购买商品 ${item.productName} 失败:`, err);
+            }
           }
-        });
+        }
         
-        if (response.data.success) {
-          // 下单成功，从购物车中移除已购买的商品
-          // 更新购物车数据
-          this.cartItems = this.cartItems.filter(item => !this.selectedItems.includes(item.productId));
-          // 更新统计信息
-          this.calculateTotalAmount();
+        // 更新购物车状态
+        if (successCount > 0) {
+          // 重新获取购物车数据，确保数据最新
+          await this.fetchCartItems();
+          
           // 清空选中的商品
           this.selectedItems = [];
           this.isAllSelected = false;
+          
+          // 清空表单
+          this.buyer = {
+            name: '',
+            phone: '',
+            address: '',
+            notes: ''
+          };
+          
           // 显示成功消息
-          alert('订单创建成功！');
-        } else {
-          // 下单失败，显示错误消息
-          alert('订单创建失败: ' + response.data.message);
+          this.buySuccess = true;
+          this.showBuyForm = false;
+          
+          // 5秒后自动隐藏成功提示
+          setTimeout(() => {
+            this.buySuccess = false;
+          }, 5000);
+        }
+        
+        // 显示失败信息（如果有）
+        if (failCount > 0) {
+          this.error = `部分商品购买失败: ${failedProducts.join(', ')}`;
+          // 3秒后自动隐藏错误提示
+          setTimeout(() => {
+            this.error = '';
+          }, 3000);
         }
       } catch (error) {
-        console.error('批量下单失败:', error);
-        alert('批量下单失败，请稍后重试。');
+        console.error('下单失败:', error);
+        this.error = '下单失败，请稍后重试。';
+        // 3秒后自动隐藏错误提示
+        setTimeout(() => {
+          this.error = '';
+        }, 3000);
       }
     },
     
@@ -416,12 +530,29 @@ export default {
 }
 
 .cart-item-quantity button {
-  width: 30px;
-  height: 30px;
+  width: 35px;
+  height: 35px;
   border: 1px solid #ddd;
-  background-color: white;
+  background-color: #f8f9fa;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 20px;
+  font-weight: bold;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  color: #000000; /* 黑色文字 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+}
+
+.cart-item-quantity button:hover {
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.cart-item-quantity button:active {
+  transform: translateY(1px);
 }
 
 .cart-item-quantity button:disabled {
@@ -522,5 +653,37 @@ export default {
 
 .batch-favorite-btn.active:hover {
   background-color: #e0a800;
+}
+
+/* 弹窗样式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  width: 100%;
+  max-width: 500px;
+  margin: 20px;
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

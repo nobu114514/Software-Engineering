@@ -97,9 +97,9 @@ public class CustomerService {
                  .append("b.name as buyer_name, ")
                  .append("b.notes as notes, ")
                  .append("b.phone as phone, ")
+                 .append("b.order_status as order_status, ")
                  .append("p.name as product_name, ")
-                 .append("p.price as price, ")
-                 .append("CASE WHEN b.is_completed THEN 'completed' ELSE 'pending' END as status ")
+                 .append("p.price as price ")
                  .append("FROM buyers b ")
                  .append("LEFT JOIN products p ON b.product_id = p.id ")
                  .append("WHERE b.customer_id = ? ");
@@ -133,7 +133,8 @@ public class CustomerService {
             order.put("phone", rs.getString("phone"));
             order.put("product_name", rs.getString("product_name"));
             order.put("price", rs.getBigDecimal("price"));
-            order.put("status", rs.getString("status"));
+            order.put("status", rs.getInt("order_status"));
+            order.put("order_status", rs.getInt("order_status"));
             return order;
         });
     }

@@ -1,6 +1,8 @@
 package com.shop.controller;
 
 import com.shop.model.Buyer;
+import com.shop.model.Product;
+import com.shop.repository.BuyerRepository;
 import com.shop.service.BuyerService;
 import com.shop.service.CustomerService;
 import com.shop.service.ProductService;
@@ -19,6 +21,9 @@ public class BuyerController {
 
     @Autowired
     private BuyerService buyerService;
+    
+    @Autowired
+    private BuyerRepository buyerRepository;
     
     @Autowired
     private ProductService productService;
@@ -137,5 +142,50 @@ public class BuyerController {
             @RequestParam boolean success) {
         boolean result = buyerService.completeTransaction(id, success);
         return result ? ResponseEntity.ok(true) : ResponseEntity.notFound().build();
+    }
+    
+    // 更新订单状态
+    @PutMapping("/{id}/status")
+    public ResponseEntity<Boolean> updateOrderStatus(
+            @PathVariable Long id,
+            @RequestParam int status) {
+        return buyerRepository.findById(id).map(buyer -> {
+            // 更新订单状态
+            buyer.setOrderStatus(status);
+            // 如果状态更新为已完成或失败，也更新isCompleted字段
+            if (status == 4 || status == 5) {
+                buyer.setCompleted(true);
+                
+                // 调用BuyerService的completeTransaction方法处理交易完成逻辑
+                buyerService.completeTransaction(id, status == 4);
+            }
+            buyerRepository.save(buyer);
+            return ResponseEntity.ok(true);
+        }).orElse(ResponseEntity.notFound().build());
+    }
+    
+    // 取消订单
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<?> cancelOrder(
+            @PathVariable Long id,
+            @RequestParam boolean isCustomer) {
+        return buyerRepository.findById(id).map(buyer -> {
+            // 设置订单状态为交易失败(5)
+            buyer.setOrderStatus(5);
+            buyer.setCompleted(true);
+            
+            // 交易失败，商品解冻
+            Product product = buyer.getProduct();
+            if (product != null) {
+                productService.freezeProduct(product.getId(), false);
+            }
+            
+            buyerRepository.save(buyer);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "订单已取消");
+            return ResponseEntity.ok(response);
+        }).orElse(ResponseEntity.notFound().build());
     }
 }

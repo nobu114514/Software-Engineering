@@ -41,11 +41,15 @@ public class FileController {
     public ResponseEntity<?> uploadImages(@RequestParam("files") MultipartFile[] files) {
         // 验证文件数量
         if (files == null || files.length == 0) {
-            return ResponseEntity.badRequest().body(Map.of("error", "请选择要上传的图片"));
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "请选择要上传的图片");
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
         if (files.length > MAX_FILE_COUNT) {
-            return ResponseEntity.badRequest().body(Map.of("error", "最多只能上传" + MAX_FILE_COUNT + "张图片"));
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("error", "最多只能上传" + MAX_FILE_COUNT + "张图片");
+            return ResponseEntity.badRequest().body(errorResponse);
         }
 
         List<String> imageUrls = new ArrayList<>();

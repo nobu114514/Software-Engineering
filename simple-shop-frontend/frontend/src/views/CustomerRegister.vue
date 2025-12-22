@@ -86,12 +86,13 @@ export default {
   },
   created() {
     // 如果已登录为用户，跳转到首页
-    if (localStorage.getItem('customerLoggedIn')) {
+    if (localStorage.getItem('customerToken')) {
       this.$router.push('/')
     }
     // 如果已登录为卖家，提示并跳转到首页
-    if (localStorage.getItem('sellerLoggedIn')) {
-      this.errorMessage = '请先退出卖家登录'
+    if (localStorage.getItem('sellerToken')) {
+      this.message = '请先退出卖家登录'
+      this.success = false
       setTimeout(() => {
         this.$router.push('/')
       }, 2000)
@@ -164,28 +165,28 @@ export default {
     },
     
     async autoLogin() {
-      try {
-        const response = await this.$axios.post('/login', null, {
-          params: {
-            username: this.form.username,
-            password: this.form.password
-          }
-        });
-        
-        if (response.data.success) {
-          // 保存登录状态
-          localStorage.setItem('customerLoggedIn', 'true');
-          localStorage.setItem('customerUsername', this.form.username);
+        try {
+          const response = await this.$axios.post('/login', null, {
+            params: {
+              username: this.form.username,
+              password: this.form.password
+            }
+          });
           
-          // 跳转到首页
-          setTimeout(() => {
-            this.$router.push('/');
-          }, 1000);
+          if (response.data.success && response.data.token) {
+            // 保存登录状态
+            localStorage.setItem('customerToken', response.data.token);
+            localStorage.setItem('customerUsername', this.form.username);
+            
+            // 跳转到首页
+            setTimeout(() => {
+              this.$router.push('/');
+            }, 1000);
+          }
+        } catch (err) {
+          console.error('自动登录失败:', err);
         }
-      } catch (err) {
-        console.error('自动登录失败:', err);
       }
-    }
   }
 }
 </script>

@@ -4,6 +4,8 @@ import com.shop.model.Buyer;
 import com.shop.model.Customer;
 import com.shop.model.Product;
 import com.shop.repository.BuyerRepository;
+import com.shop.repository.ProductRepository;
+import com.shop.service.StockLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +31,12 @@ public class BuyerService {
     
     @Autowired
     private CustomerService customerService;
+    
+    @Autowired
+    private StockLogService stockLogService;
+    
+    @Autowired
+    private ProductRepository productRepository;
 
     @Transactional
     public Buyer createBuyer(Buyer buyer, Long productId, String username) {
@@ -68,15 +76,11 @@ public class BuyerService {
         buyer.setCustomerId(customerId);
         
         try {
-            // 同时冻结商品
-            productService.freezeProduct(productId, true);
-            // 保存购买意向
+            // 保存购买意向，不再冻结商品
             return buyerRepository.save(buyer);
         } catch (Exception e) {
-            // 保存失败时，解冻商品
-            try {
-                productService.freezeProduct(productId, false);
-            } catch (Exception ignore) {}
+            // 打印完整的错误堆栈信息
+            e.printStackTrace();
             throw new BuyerServiceException("创建购买意向失败：" + e.getMessage());
         }
     }
@@ -94,16 +98,34 @@ public class BuyerService {
     public boolean completeTransaction(Long buyerId, boolean success) {
         return buyerRepository.findById(buyerId).map(buyer -> {
             buyer.setCompleted(true);
+            // 更新orderStatus字段
+            buyer.setOrderStatus(success ? 4 : 5);
             Product product = buyer.getProduct();
             
             if (success) {
-                // 交易成功，商品下架
-                productService.deactivateProduct(product.getId());
+                // 交易成功，减少商品库存1个单位
+                int currentStock = product.getStock();
+                if (currentStock > 0) {
+                    product.setStock(currentStock - 1);
+                    // 记录库存日志
+                    int newStock = currentStock - 1;
+                    stockLogService.createStockLog(product, -1, currentStock, newStock, "交易成功", "交易成功，库存减少1个单位");
+                    
+                    // 确保商品未被冻结
+                    if (product.isFrozen()) {
+                        product.setFrozen(false);
+                        // 记录库存日志
+                        stockLogService.createStockLog(product, 0, newStock, newStock, "商品解冻", "商品交易成功，已解冻");
+                    }
+                }
             } else {
                 // 交易失败，商品解冻
-                productService.freezeProduct(product.getId(), false);
+                product.setFrozen(false);
+                // 记录库存日志
+                stockLogService.createStockLog(product, 0, product.getStock(), product.getStock(), "商品解冻", "商品交易失败，已解冻");
             }
             
+            productRepository.save(product);
             buyerRepository.save(buyer);
             return true;
         }).orElse(false);

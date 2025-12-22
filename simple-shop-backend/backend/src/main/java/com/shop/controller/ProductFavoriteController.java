@@ -24,7 +24,7 @@ public class ProductFavoriteController {
             @RequestParam Long customerId) {
         Map<String, Object> response = new HashMap<>();
         try {
-            var favorite = favoriteService.addToFavorites(customerId, productId);
+            ProductFavorite favorite = favoriteService.addToFavorites(customerId, productId);
             // 清除循环引用
             favorite.getCustomer().setFavoriteProducts(null);
             favorite.getProduct().setSubCategory(null);
@@ -81,7 +81,7 @@ public class ProductFavoriteController {
         try {
             List<ProductFavorite> favorites = favoriteService.getCustomerFavorites(customerId);
             // 清除循环引用
-            for (var favorite : favorites) {
+            for (ProductFavorite favorite : favorites) {
                 favorite.getCustomer().setFavoriteProducts(null);
                 if (favorite.getProduct().getSubCategory() != null) {
                     favorite.getProduct().getSubCategory().setCategory(null);

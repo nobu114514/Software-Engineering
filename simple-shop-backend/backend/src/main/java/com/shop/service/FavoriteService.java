@@ -42,7 +42,7 @@ public class FavoriteService {
     public void removeFavorite(String username, Long productId) {
         // 检查收藏是否存在
         Optional<Favorite> existing = favoriteRepository.findByUsernameAndProductId(username, productId);
-        if (existing.isEmpty()) {
+        if (!existing.isPresent()) {
             throw new RuntimeException("收藏不存在");
         }
 

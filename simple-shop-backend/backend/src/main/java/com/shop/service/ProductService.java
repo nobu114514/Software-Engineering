@@ -14,6 +14,9 @@ public class ProductService {
 
     @Autowired
     private ProductRepository productRepository;
+    
+    @Autowired
+    private StockLogService stockLogService;
 
     public Optional<Product> getActiveProduct() {
         return productRepository.findByIsActiveTrue();
@@ -70,6 +73,13 @@ public class ProductService {
         Optional<Product> productOpt = productRepository.findById(id);
         if (productOpt.isPresent()) {
             Product product = productOpt.get();
+            String action = freeze ? "商品冻结" : "商品解冻";
+            String description = freeze ? "商品被冻结，无法继续交易" : "商品解冻，可以继续交易";
+            
+            // 记录库存日志，使用实际的库存数量
+            int currentStock = product.getStock();
+            stockLogService.createStockLog(product, 0, currentStock, currentStock, action, description);
+            
             product.setFrozen(freeze);
             productRepository.save(product);
             return true;
@@ -81,6 +91,13 @@ public class ProductService {
         Optional<Product> productOpt = productRepository.findById(id);
         if (productOpt.isPresent()) {
             Product product = productOpt.get();
+            String action = "商品下架";
+            String description = "商品库存为0，已下架";
+            
+            // 记录库存日志，使用实际的库存数量
+            int currentStock = product.getStock();
+            stockLogService.createStockLog(product, 0, currentStock, currentStock, action, description);
+            
             product.setActive(false);
             productRepository.save(product);
             return true;
@@ -93,6 +110,13 @@ public class ProductService {
         Optional<Product> productOpt = productRepository.findById(id);
         if (productOpt.isPresent()) {
             Product product = productOpt.get();
+            String action = "商品上架";
+            String description = "商品重新上架销售";
+            
+            // 记录库存日志，使用实际的库存数量
+            int currentStock = product.getStock();
+            stockLogService.createStockLog(product, 0, currentStock, currentStock, action, description);
+            
             product.setActive(true);
             product.setFrozen(false); // 可选，确保未被冻结
             return productRepository.save(product);

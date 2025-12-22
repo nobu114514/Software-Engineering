@@ -41,12 +41,12 @@
           </td>
           <td>
             <template v-if="buyer.orderStatus < 4">
-              <button v-if="buyer.orderStatus < 1" class="btn" @click="updateOrderStatus(buyer.id, 1)" :disabled="buyer.orderStatus === 4 || buyer.orderStatus === 5">商家确认</button>
-              <button v-if="buyer.orderStatus < 2" class="btn" @click="updateOrderStatus(buyer.id, 2)" :disabled="buyer.orderStatus === 4 || buyer.orderStatus === 5">备货完成</button>
-              <button v-if="buyer.orderStatus < 3" class="btn" @click="updateOrderStatus(buyer.id, 3)" :disabled="buyer.orderStatus === 4 || buyer.orderStatus === 5">开始发货</button>
-              <button v-if="buyer.orderStatus < 4" class="btn" @click="completeTransaction(buyer.id, true)" :disabled="buyer.orderStatus === 4 || buyer.orderStatus === 5">交易完成</button>
-              <button class="btn btn-secondary" @click="completeTransaction(buyer.id, false)" :disabled="buyer.orderStatus === 4 || buyer.orderStatus === 5">交易失败</button>
-              <button class="btn btn-danger" @click="confirmCancelOrder(buyer.id)" :disabled="buyer.orderStatus === 4 || buyer.orderStatus === 5">取消订单</button>
+              <button class="btn" @click="updateOrderStatus(buyer.id, 1)" :disabled="isButtonDisabled(buyer.orderStatus, 1)">商家确认</button>
+              <button class="btn" @click="updateOrderStatus(buyer.id, 2)" :disabled="isButtonDisabled(buyer.orderStatus, 2)">备货完成</button>
+              <button class="btn" @click="updateOrderStatus(buyer.id, 3)" :disabled="isButtonDisabled(buyer.orderStatus, 3)">开始发货</button>
+              <button class="btn" @click="completeTransaction(buyer.id, true)" :disabled="isButtonDisabled(buyer.orderStatus, 4)">交易完成</button>
+              <button class="btn btn-secondary" @click="completeTransaction(buyer.id, false)" :disabled="isButtonDisabled(buyer.orderStatus, 'failed')">交易失败</button>
+              <button class="btn btn-danger" @click="confirmCancelOrder(buyer.id)" :disabled="isButtonDisabled(buyer.orderStatus, 'cancel')">取消订单</button>
             </template>
             <span v-else>已处理</span>
           </td>
@@ -231,6 +231,15 @@ export default {
         default: return 'status-unknown'
       }
     },
+    // 判断按钮是否应该禁用
+    isButtonDisabled(currentStatus, targetStatus) {
+      // 交易失败和取消订单按钮始终可用
+      if (targetStatus === 'failed' || targetStatus === 'cancel') {
+        return false
+      }
+      // 其他按钮只有当前状态与目标状态的前一个状态匹配时才可用
+      return currentStatus !== (targetStatus - 1)
+    },
     // 返回上一页
     goBack() {
       this.$router.push('/seller/dashboard')
@@ -355,6 +364,17 @@ tr:nth-child(even) {
   background: #218838;
 }
 
+/* 禁用按钮样式 */
+.btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn:disabled:hover {
+  background: #ccc;
+}
+
 .btn-danger {
   background: #dc3545;
   margin-top: 0.8rem;
@@ -362,6 +382,14 @@ tr:nth-child(even) {
 
 .btn-danger:hover {
   background: #c82333;
+}
+
+.btn-danger:disabled {
+  background: #ccc;
+}
+
+.btn-secondary:disabled {
+  background: #ccc;
 }
 
 .header-container {

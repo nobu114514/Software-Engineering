@@ -2,6 +2,7 @@ package com.shop.service;
 
 import com.shop.model.*;
 import com.shop.repository.*;
+import com.shop.service.StockLogService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,9 @@ public class OrderService {
 
     @Autowired
     private CartItemRepository cartItemRepository;
+
+    @Autowired
+    private StockLogService stockLogService;
 
     // 获取当前登录用户
     private Customer getCurrentCustomer(String username) {
@@ -95,8 +99,14 @@ public class OrderService {
             orderItems.add(orderItem);
 
             // 6. 减少商品库存
-            product.setStock(product.getStock() - cartItem.getQuantity());
+            int currentStock = product.getStock();
+            int quantity = cartItem.getQuantity();
+            product.setStock(currentStock - quantity);
             productRepository.save(product);
+            
+            // 记录库存日志
+            int newStock = currentStock - quantity;
+            stockLogService.createStockLog(product, -quantity, currentStock, newStock, "下单成功", "下单成功，库存减少" + quantity + "个单位");
         }
 
         order.setOrderItems(orderItems);

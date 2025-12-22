@@ -251,8 +251,10 @@ export default {
         // 获取当前登录的用户名并进行编码，确保符合HTTP请求头的ISO-8859-1编码要求
         const username = localStorage.getItem('customerUsername');
         const encodedUsername = encodeURIComponent(username || '');
+        // 构造购买意向请求，添加orderStatus字段（初始值为0，表示客户下单）
+        const buyRequest = { ...this.buyer, orderStatus: 0 };
         // 发送请求时携带编码后的用户名作为请求头
-        await this.$axios.post(`http://localhost:8081/api/buyers/product/${this.product.id}`, this.buyer, {
+        await this.$axios.post(`http://localhost:8081/api/buyers/product/${this.product.id}`, buyRequest, {
           headers: {
             'X-Username': encodedUsername
           }

@@ -83,14 +83,14 @@
     <div class="products-container" v-if="!loading">
       <!-- 只有当 products 数组有数据时，才显示商品卡片列表 -->
       <div class="product-list" v-if="products.length > 0">
-        <div class="product-card card" v-for="product in products" :key="product.id">
+        <div class="product-card card" v-for="product in products" :key="product.id" :class="{ 'disabled-card': !canBuy }">
           <!-- 商品名称链接到详情页 -->
-          <router-link :to="{ name: 'productDetail', params: { id: product.id } }">
+          <router-link :to="{ name: 'productDetail', params: { id: product.id } }" :class="{ 'disabled-link': !canBuy }">
             <h3>{{ product.name }}</h3>
           </router-link>
           
           <!-- 图片链接到详情页 -->
-          <router-link :to="{ name: 'productDetail', params: { id: product.id } }" class="product-image">
+          <router-link :to="{ name: 'productDetail', params: { id: product.id } }" class="product-image" :class="{ 'disabled-link': !canBuy }">
             <!-- 显示商品图片，如果没有图片则显示默认图片 -->
             <img
               :src="product.imageUrl || 'https://img.pngsucai.com/00/87/02/31a2f72e4e901438.webp'"
@@ -116,15 +116,23 @@
           <button
             class="btn"
             @click="handleBuyClick(product)"
-            v-if="product.stock > 0">
+            v-if="product.stock > 0"
+            :disabled="!canBuy"
+            :title="!canBuy ? '请登录买家账号后操作' : ''">
             我要购买
           </button>
           <button
             class="btn"
             @click="addToCart(product)"
-            v-if="product.stock > 0">
+            v-if="product.stock > 0"
+            :disabled="!canBuy"
+            :title="!canBuy ? '请登录买家账号后操作' : ''">
             加入购物车
           </button>
+          <!-- 登录提示 -->
+          <div class="login-prompt" v-if="product.stock > 0 && !canBuy">
+            <span>{{ isSellerLoggedIn ? '卖家账号无法购买' : '请登录买家账号后操作' }}</span>
+          </div>
         </div>
       </div>
 
@@ -158,35 +166,44 @@
     </div>
 
     <!-- 购买表单弹窗 -->
-    <div v-if="showBuyForm && currentProduct" class="buy-form card">
-      <h2>购买信息</h2>
-      <form @submit.prevent="submitBuy">
-        <div class="form-group">
-          <label for="name">姓名</label>
-          <input type="text" id="name" v-model="buyer.name" required>
-        </div>
-        <div class="form-group">
-          <label for="phone">电话</label>
-          <input type="tel" id="phone" v-model="buyer.phone" required>
-        </div>
-        <div class="form-group">
-          <label for="address">地址</label>
-          <textarea id="address" v-model="buyer.address" required></textarea>
-        </div>
-        <div class="form-group">
-          <label for="notes">备注</label>
-          <textarea id="notes" v-model="buyer.notes"></textarea>
-        </div>
-        <div class="form-actions">
-          <button type="submit" class="btn">提交购买意向</button>
-          <button type="button" class="btn btn-secondary" @click="showBuyForm = false">取消</button>
-        </div>
-      </form>
+    <div v-if="showBuyForm && currentProduct" class="modal-overlay">
+      <div class="buy-form card modal-content">
+        <h2>购买信息</h2>
+        <form @submit.prevent="submitBuy">
+          <div class="form-group">
+            <label for="name">姓名</label>
+            <input type="text" id="name" v-model="buyer.name" required>
+          </div>
+          <div class="form-group">
+            <label for="phone">电话</label>
+            <input type="tel" id="phone" v-model="buyer.phone" required>
+          </div>
+          <div class="form-group">
+            <label for="address">地址</label>
+            <textarea id="address" v-model="buyer.address" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="notes">备注</label>
+            <textarea id="notes" v-model="buyer.notes"></textarea>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn">提交购买意向</button>
+            <button type="button" class="btn btn-secondary" @click="showBuyForm = false">取消</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <!-- 提交成功提示 -->
     <div v-if="buySuccess" class="alert alert-success">
       购买意向已提交，请等待卖家联系进行线下交易。
+    </div>
+
+    <!-- 临时弹窗提示 -->
+    <div v-if="showToast" class="toast" :class="toastType">
+      <div class="toast-content">
+        {{ toastMessage }}
+      </div>
     </div>
   </div>
 </template>
@@ -213,6 +230,10 @@ export default {
         notes: ''
       },
       buySuccess: false,
+      // 临时弹窗状态
+      showToast: false,
+      toastMessage: '',
+      toastType: 'success', // success或error
       // 搜索相关
       searchKeyword: '',
       // 排序相关
@@ -224,6 +245,20 @@ export default {
       totalPages: 0,
       totalElements: 0
     };
+  },
+  computed: {
+    // 判断是否为买家登录状态
+    isBuyerLoggedIn() {
+      return !!localStorage.getItem('customerToken');
+    },
+    // 判断是否为卖家登录状态
+    isSellerLoggedIn() {
+      return !!localStorage.getItem('sellerToken');
+    },
+    // 判断是否可以进行购买操作
+    canBuy() {
+      return this.isBuyerLoggedIn && !this.isSellerLoggedIn;
+    }
   },
   created() {
     // 获取分类和商品数据
@@ -347,7 +382,8 @@ export default {
         const username = localStorage.getItem('customerUsername')
         const encodedUsername = encodeURIComponent(username || '')
         // 发送请求时携带编码后的用户名作为请求头
-        await this.$axios.post(`/buyers/product/${this.currentProduct.id}`, this.buyer, {
+        const buyRequest = { ...this.buyer };
+        await this.$axios.post(`/buyers/product/${this.currentProduct.id}`, buyRequest, {
           headers: {
             'X-Username': encodedUsername
           }
@@ -406,15 +442,33 @@ export default {
         
         if (response.data.success) {
           // 显示成功提示
-          alert(response.data.message + '\n购物车商品项数: ' + response.data.cartSize + '\n商品总数量: ' + response.data.totalQuantity);
+          this.toastMessage = response.data.message + '\n购物车商品项数: ' + response.data.cartSize + '\n商品总数量: ' + response.data.totalQuantity;
+          this.toastType = 'success';
+          this.showToast = true;
+          // 3秒后自动关闭
+          setTimeout(() => {
+            this.showToast = false;
+          }, 3000);
           console.log('购物车大小:', response.data.cartSize);
           console.log('商品总数量:', response.data.totalQuantity);
         } else {
-          alert('错误: ' + response.data.message);
+          this.toastMessage = '错误: ' + response.data.message;
+          this.toastType = 'error';
+          this.showToast = true;
+          // 3秒后自动关闭
+          setTimeout(() => {
+            this.showToast = false;
+          }, 3000);
         }
       } catch (error) {
         console.error('加入购物车失败:', error);
-        alert('加入购物车失败，请稍后重试。');
+        this.toastMessage = '加入购物车失败，请稍后重试。';
+        this.toastType = 'error';
+        this.showToast = true;
+        // 3秒后自动关闭
+        setTimeout(() => {
+          this.showToast = false;
+        }, 3000);
       }
     }
   }
@@ -719,6 +773,35 @@ export default {
   background-color: #545b62;
 }
 
+/* 禁用状态的商品卡片样式 */
+.disabled-card {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* 禁用状态的链接样式 */
+.disabled-link {
+  pointer-events: none;
+}
+
+/* 禁用状态的按钮样式 */
+.btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* 登录提示样式 */
+.login-prompt {
+  margin: 15px;
+  padding: 10px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-radius: 4px;
+  font-size: 14px;
+  text-align: center;
+}
+
 .buy-form {
   position: fixed;
   top: 50%;
@@ -814,6 +897,65 @@ export default {
   .buy-form {
     min-width: 90%;
     padding: 20px;
+  }
+}
+
+/* 临时弹窗样式 - 优化后更符合页面主题 */
+.toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 24px 32px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1001;
+  font-size: 14px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  background-color: white;
+  border: 1px solid #e9ecef;
+  animation: toastFadeIn 0.3s ease, toastFadeOut 0.3s ease 2.7s forwards;
+}
+
+.toast.success {
+  border-left: 4px solid #28a745;
+  color: #155724;
+  background-color: #f8fff8;
+}
+
+.toast.error {
+  border-left: 4px solid #dc3545;
+  color: #721c24;
+  background-color: #fff8f8;
+}
+
+.toast-content {
+  white-space: pre-line;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+@keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0);
+  }
+}
+
+@keyframes toastFadeOut {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) translateY(-20px);
   }
 }
 </style>

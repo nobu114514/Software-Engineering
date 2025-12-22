@@ -24,10 +24,18 @@ public class Buyer {
     
     private boolean isCompleted; // 交易是否完成
     
+    @Column(name = "order_status", nullable = false, columnDefinition = "int default 0")
+    private int orderStatus; // 订单状态 0:客户下单, 1:商家确认, 2:备货完成, 3:开始发货, 4:交易完成, 5:交易失败
+    
     private LocalDateTime createdAt;
     
     @Column(name = "customer_id")
     private Long customerId; // 客户ID
+    
+    // 默认构造函数
+    public Buyer() {
+        this.orderStatus = 0; // 设置默认订单状态为0
+    }
 
     // Getters and Setters
     public Long getId() {
@@ -102,9 +110,18 @@ public class Buyer {
         this.customerId = customerId;
     }
 
+    public int getOrderStatus() {
+        return orderStatus;
+    }
+
+    public void setOrderStatus(int orderStatus) {
+        this.orderStatus = orderStatus;
+    }
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         isCompleted = false;
+        orderStatus = 0; // 默认初始状态为客户下单
     }
 }

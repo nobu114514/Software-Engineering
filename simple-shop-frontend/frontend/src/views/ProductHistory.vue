@@ -85,7 +85,7 @@
         async fetchProducts() {
           try {
             this.loading = true
-            const response = await this.$axios.get('/products/all') // 修复：使用正确的API端点
+            const response = await this.$axios.get('/products') // 修复：使用正确的API端点
             this.products = response.data
             this.error = ''
           } catch (err) {

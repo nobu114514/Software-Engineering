@@ -113,6 +113,10 @@ public class CartService {
                     // 数量为0或负数，移除商品
                     cartItemRepository.delete(existingItem);
                 } else {
+                    // 检查库存
+                    if (quantity > product.getStock()) {
+                        throw new RuntimeException("购买数量超过库存限制");
+                    }
                     // 更新数量
                     existingItem.setQuantity(quantity);
                     cartItemRepository.save(existingItem);

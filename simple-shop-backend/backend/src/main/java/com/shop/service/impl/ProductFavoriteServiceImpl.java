@@ -1,6 +1,8 @@
 package com.shop.service.impl;
 
 import com.shop.model.ProductFavorite;
+import com.shop.model.Customer;
+import com.shop.model.Product;
 import com.shop.repository.ProductFavoriteRepository;
 import com.shop.repository.CustomerRepository;
 import com.shop.repository.ProductRepository;
@@ -28,10 +30,10 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
     @Transactional
     public ProductFavorite addToFavorites(Long customerId, Long productId) {
         // 检查用户和商品是否存在
-        var customer = customerRepository.findById(customerId)
+        Customer customer = customerRepository.findById(customerId)
             .orElseThrow(() -> new RuntimeException("Customer not found"));
         
-        var product = productRepository.findById(productId)
+        Product product = productRepository.findById(productId)
             .orElseThrow(() -> new RuntimeException("Product not found"));
         
         // 检查是否已收藏
@@ -40,7 +42,7 @@ public class ProductFavoriteServiceImpl implements ProductFavoriteService {
         }
         
         // 创建收藏记录
-        var favorite = new ProductFavorite();
+        ProductFavorite favorite = new ProductFavorite();
         favorite.setCustomer(customer);
         favorite.setProduct(product);
         

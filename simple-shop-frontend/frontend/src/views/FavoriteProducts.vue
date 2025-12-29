@@ -39,10 +39,12 @@
             <router-link :to="`/product/${favorite.product.id}`" class="product-image-link">
               <div class="product-image-container">
                 <img 
-                  :src="favorite.product.imageUrl || 'https://img.pngsucai.com/00/87/02/31a2f72e4e901438.webp'" 
+                  :src="getProductImageUrl(favorite.product)" 
                   :alt="favorite.product.name" 
+                  :data-product-id="favorite.product.id"
                   class="product-image"
                   @error="handleImageError($event)"
+                  @load="handleImageLoad($event)"
                 >
               </div>
             </router-link>
@@ -100,6 +102,49 @@ export default {
     this.loadFavoriteProducts();
   },
   methods: {
+    // 获取商品图片URL，处理可能的空值或无效URL
+    getProductImageUrl(product) {
+      // 如果没有imageUrl，返回基于商品ID的默认图片
+      if (!product.imageUrl) {
+        return 'https://picsum.photos/seed/product-' + product.id + '/280/200.jpg';
+      }
+      
+      // 如果URL不以http开头，可能是相对路径，需要处理
+      if (!product.imageUrl.startsWith('http')) {
+        // 这里可以根据实际情况添加基础URL
+        return product.imageUrl;
+      }
+      
+      // 对于花瓣网等可能有防盗链的图片，使用基于商品ID的替代图片
+      if (product.imageUrl.includes('huaban.com')) {
+        console.log('检测到花瓣网图片，使用替代图片:', product.imageUrl);
+        return 'https://picsum.photos/seed/product-' + product.id + '/280/200.jpg';
+      }
+      
+      return product.imageUrl;
+    },
+    
+    // 处理图片加载失败
+    handleImageError(e) {
+      // 当图片加载失败时，设置基于商品ID的默认图片
+      const productId = e.target.dataset.productId || 'default';
+      const defaultImage = 'https://picsum.photos/seed/product-' + productId + '/280/200.jpg';
+      
+      // 打印错误信息
+      console.error('收藏页面图片加载失败:', e.target.src);
+      
+      // 避免无限循环，如果当前已经是默认图片且加载失败，不再尝试替换
+      if (e.target.src !== defaultImage) {
+        e.target.src = defaultImage;
+      }
+    },
+    
+    // 处理图片加载成功
+    handleImageLoad(e) {
+      // 图片加载成功
+      console.log('收藏页面图片加载成功:', e.target.src);
+    },
+    
     // 加载用户收藏的商品列表
     async loadFavoriteProducts() {
       if (!localStorage.getItem('customerToken')) {
@@ -137,10 +182,7 @@ export default {
       }
     },
     
-    // 处理图片加载失败
-    handleImageError(e) {
-      e.target.src = 'https://img.pngsucai.com/00/87/02/31a2f72e4e901438.webp';
-    }
+
   }
 }
 </script>

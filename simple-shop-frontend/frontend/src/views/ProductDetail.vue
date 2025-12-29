@@ -7,9 +7,38 @@
         <div class="nav-links">
           <router-link to="/" class="nav-link">首页</router-link>
           <span class="nav-divider">|</span>
-          <router-link to="/login" class="nav-link">登录</router-link>
-          <span class="nav-divider">|</span>
-          <router-link to="/register" class="nav-link">注册</router-link>
+          
+          <!-- 用户未登录状态 -->
+          <template v-if="!isCustomerLoggedIn && !isSellerLoggedIn">
+            <router-link to="/login" class="nav-link">登录</router-link>
+            <span class="nav-divider">|</span>
+            <router-link to="/register" class="nav-link">注册</router-link>
+          </template>
+          
+          <!-- 用户已登录状态 -->
+          <template v-if="isCustomerLoggedIn">
+            <span class="nav-user">{{ customerUsername || '用户' }}</span>
+            <span class="nav-divider">|</span>
+            <router-link to="/orders" class="nav-link">我的订单</router-link>
+            <span class="nav-divider">|</span>
+            <router-link to="/favorites" class="nav-link">我的收藏</router-link>
+            <span class="nav-divider">|</span>
+            <router-link to="/cart" class="nav-link">购物车</router-link>
+            <span class="nav-divider">|</span>
+            <a href="#" @click.prevent="customerLogout" class="nav-link">退出登录</a>
+          </template>
+          
+          <!-- 卖家入口 -->
+          <template v-if="!isSellerLoggedIn && !isCustomerLoggedIn">
+            <span class="nav-divider">|</span>
+            <router-link to="/seller/login" class="nav-link">卖家入口</router-link>
+          </template>
+          <template v-if="isSellerLoggedIn">
+            <span class="nav-divider">|</span>
+            <router-link to="/seller/dashboard" class="nav-link">卖家后台</router-link>
+            <span class="nav-divider">|</span>
+            <a href="#" @click.prevent="sellerLogout" class="nav-link">退出登录</a>
+          </template>
         </div>
       </div>
     </div>
@@ -42,10 +71,11 @@
           <!-- 主图 -->
           <div class="main-image">
             <img
-              :src="currentMainImage || 'https://img.pngsucai.com/00/87/02/31a2f72e4e901438.webp'"
+              :src="currentMainImage || 'https://picsum.photos/seed/product-' + (product ? product.id : 'default') + '/600/600.jpg'"
               :alt="product.name || '商品图片'"
               @click="openCarousel(currentImageIndex)"
               @error="handleMainImageError"
+              @load="handleMainImageLoad"
               class="main-img clickable"
               title="点击查看大图"
             >
@@ -163,6 +193,7 @@
       :show="showCarousel" 
       :images="allProductImages"
       :initial-index="currentImageIndex"
+      :default-image-seed="product ? product.id : 'default'"
       @close="closeCarousel"
     />
   </div>
@@ -187,6 +218,9 @@ export default {
       currentImageIndex: 0,    // 当前图片索引
       allProductImages: [],    // 所有商品图片URL列表
       isFavorited: false,      // 当前商品是否已收藏
+      isCustomerLoggedIn: false, // 客户登录状态
+      isSellerLoggedIn: false,  // 卖家登录状态
+      customerUsername: '',      // 客户用户名
       buyer: {
         name: '',
         phone: '',
@@ -202,6 +236,7 @@ export default {
     }
   },
   created() {
+    this.checkLoginStatus();
     const productId = this.$route.params.id;
     if (productId) {
       this.fetchProduct(productId);
@@ -217,15 +252,49 @@ export default {
         this.extractImagesFromDescription();
         this.checkIfFavorited();
       }
+    },
+    $route() {
+      this.checkLoginStatus();
     }
   },
   methods: {
+    // 检查登录状态
+    checkLoginStatus() {
+      // 检查卖家登录状态
+      this.isSellerLoggedIn = !!localStorage.getItem('sellerToken');
+      // 检查客户登录状态
+      this.isCustomerLoggedIn = !!localStorage.getItem('customerToken');
+      this.customerUsername = localStorage.getItem('customerUsername') || '';
+    },
+    
+    // 客户退出登录
+    customerLogout() {
+      localStorage.removeItem('customerToken');
+      localStorage.removeItem('customerUsername');
+      this.isCustomerLoggedIn = false;
+      this.customerUsername = '';
+      this.$router.push('/login');
+    },
+    
+    // 卖家退出登录
+    sellerLogout() {
+      localStorage.removeItem('sellerToken');
+      localStorage.removeItem('sellerUsername');
+      this.isSellerLoggedIn = false;
+      this.$router.push('/seller/login');
+    },
+    
     // 获取商品信息
     async fetchProduct(id) {
       try {
         this.loading = true;
         const response = await this.$axios.get(`http://localhost:8081/api/products/${id}`);
         this.product = response.data;
+        
+        // 调试：打印商品数据，检查imageUrl字段
+        console.log('商品详情数据:', this.product);
+        console.log('商品imageUrl:', this.product.imageUrl);
+        
         this.error = '';
       } catch (err) {
         this.error = '获取商品信息失败';
@@ -238,7 +307,7 @@ export default {
     // 提交购买意向
     async submitBuy() {
       // 再次检查用户是否已登录（防止绕过前端验证）
-      if (!localStorage.getItem('customerLoggedIn')) {
+      if (!this.isCustomerLoggedIn) {
         this.error = '未登录，跳转至登录界面';
         // 2秒后跳转到登录页面
         setTimeout(() => {
@@ -249,7 +318,7 @@ export default {
       
       try {
         // 获取当前登录的用户名并进行编码，确保符合HTTP请求头的ISO-8859-1编码要求
-        const username = localStorage.getItem('customerUsername');
+        const username = this.customerUsername;
         const encodedUsername = encodeURIComponent(username || '');
         // 构造购买意向请求，添加orderStatus字段（初始值为0，表示客户下单）
         const buyRequest = { ...this.buyer, orderStatus: 0 };
@@ -276,19 +345,42 @@ export default {
 
     // 处理主图片加载失败的情况
     handleMainImageError(e) {
-      // 如果图片加载失败，使用默认图片
-      e.target.src = 'https://img.pngsucai.com/00/87/02/31a2f72e4e901438.webp';
+      // 如果图片加载失败，使用基于商品ID的默认图片
+      const defaultImage = 'https://picsum.photos/seed/product-' + this.product.id + '/600/600.jpg';
+      
+      // 打印错误信息
+      console.error('主图片加载失败:', e.target.src);
+      
+      // 避免无限循环，如果当前已经是默认图片且加载失败，不再尝试替换
+      if (e.target.src !== defaultImage) {
+        e.target.src = defaultImage;
+      }
+    },
+    
+    // 处理主图片加载成功的情况
+    handleMainImageLoad(e) {
+      // 图片加载成功
+      console.log('主图片加载成功:', e.target.src);
     },
     
     // 处理缩略图加载失败的情况
     handleImageError(e) {
-      e.target.src = 'https://img.pngsucai.com/00/87/02/31a2f72e4e901438.webp';
+      // 如果图片加载失败，使用基于商品ID的默认图片
+      const defaultImage = 'https://picsum.photos/seed/product-' + this.product.id + '/600/600.jpg';
+      
+      // 打印错误信息
+      console.error('缩略图加载失败:', e.target.src);
+      
+      // 避免无限循环，如果当前已经是默认图片且加载失败，不再尝试替换
+      if (e.target.src !== defaultImage) {
+        e.target.src = defaultImage;
+      }
     },
     
     // 处理购买按钮点击事件
     handleBuyClick() {
       // 检查用户是否已登录
-      if (!localStorage.getItem('customerLoggedIn')) {
+      if (!this.isCustomerLoggedIn) {
         // 未登录，显示提示信息
         this.error = '未登录，跳转至登录界面';
         // 2秒后跳转到登录页面
@@ -307,7 +399,13 @@ export default {
       
       // 首先添加主图
       if (this.product.imageUrl) {
-        images.push(this.product.imageUrl);
+        // 对于花瓣网等可能有防盗链的图片，使用基于商品ID的替代图片
+        if (this.product.imageUrl.includes('huaban.com')) {
+          console.log('检测到花瓣网图片，使用替代图片:', this.product.imageUrl);
+          images.push('https://picsum.photos/seed/product-' + this.product.id + '/600/600.jpg');
+        } else {
+          images.push(this.product.imageUrl);
+        }
       }
       
       // 然后从商品描述中提取图片
@@ -317,11 +415,24 @@ export default {
         let match;
         while ((match = imgRegex.exec(this.product.description)) !== null) {
           const imgUrl = match[1];
+          
+          // 对于花瓣网等可能有防盗链的图片，使用基于商品ID的替代图片
+          let finalImgUrl = imgUrl;
+          if (imgUrl.includes('huaban.com')) {
+            console.log('检测到花瓣网图片，使用替代图片:', imgUrl);
+            finalImgUrl = 'https://picsum.photos/seed/product-' + this.product.id + '-' + images.length + '/600/600.jpg';
+          }
+          
           // 避免重复添加相同的图片
-          if (!images.includes(imgUrl)) {
-            images.push(imgUrl);
+          if (!images.includes(finalImgUrl)) {
+            images.push(finalImgUrl);
           }
         }
+      }
+      
+      // 如果没有提取到任何图片，添加基于商品ID的默认图片
+      if (images.length === 0) {
+        images.push('https://picsum.photos/seed/product-' + this.product.id + '/600/600.jpg');
       }
       
       this.allProductImages = images;
@@ -349,10 +460,10 @@ export default {
     
     // 检查商品是否已收藏
     async checkIfFavorited() {
-      if (!localStorage.getItem('customerToken')) return false;
+      if (!this.isCustomerLoggedIn) return false;
       
       try {
-        const username = localStorage.getItem('customerUsername');
+        const username = this.customerUsername;
         const response = await this.$axios.get(`http://localhost:8081/api/favorites/${username}/${this.product.id}`);
         this.isFavorited = response.data.isFavorited;
       } catch (err) {
@@ -363,7 +474,7 @@ export default {
     
     // 切换收藏状态
     async toggleFavorite() {
-      if (!localStorage.getItem('customerToken')) {
+      if (!this.isCustomerLoggedIn) {
         this.error = '未登录，跳转至登录界面';
         setTimeout(() => {
           this.$router.push('/login');
@@ -372,7 +483,7 @@ export default {
       }
       
       try {
-        const username = localStorage.getItem('customerUsername');
+        const username = this.customerUsername;
         
         if (this.isFavorited) {
           // 取消收藏
@@ -437,6 +548,11 @@ export default {
 
 .nav-link:hover {
   color: #f44336;
+}
+
+.nav-user {
+  color: #f44336;
+  font-weight: bold;
 }
 
 .nav-divider {

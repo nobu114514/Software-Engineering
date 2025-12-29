@@ -136,4 +136,22 @@ public class ProductService {
     public List<Product> searchProductsByCategory(Long categoryId, String keyword) {
         return productRepository.findBySubCategoryCategoryIdAndNameContainingIgnoreCaseAndIsActiveTrueOrderByCreatedAtDesc(categoryId, keyword);
     }
+    
+    public void deleteProduct(Long id) {
+        // First check if the product exists
+        Optional<Product> productOpt = productRepository.findById(id);
+        if (!productOpt.isPresent()) {
+            throw new RuntimeException("Product not found with id: " + id);
+        }
+        
+        Product product = productOpt.get();
+        
+        // Check if the product has any related records that would prevent deletion
+        // We need to delete related records first or handle them appropriately
+        
+        // For now, we'll use a soft delete approach by deactivating the product
+        // This is safer than hard deletion which might break data integrity
+        product.setActive(false);
+        productRepository.save(product);
+    }
 }

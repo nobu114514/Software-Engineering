@@ -227,4 +227,20 @@ public class ProductController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    // 删除商品
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        try {
+            if (productService.getProductById(id).isPresent()) {
+                productService.deleteProduct(id);
+                return ResponseEntity.noContent().build();
+            }
+            return ResponseEntity.notFound().build();
+        } catch (Exception e) {
+            // Log the error for debugging
+            System.err.println("Error deleting product with id " + id + ": " + e.getMessage());
+            return ResponseEntity.status(500).build();
+        }
+    }
 }

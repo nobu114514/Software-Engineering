@@ -16,8 +16,19 @@
           <!-- 全选复选框 -->
           <div class="cart-item-header">
             <div class="cart-item-checkbox">
-              <input type="checkbox" v-model="isAllSelected" @change="toggleAllSelection">
-              <span>全选</span>
+              <input type="checkbox" id="selectAll" v-model="isAllSelected" @change="toggleAllSelection">
+              <label for="selectAll" class="select-all-label">
+                <span class="checkbox-custom"></span>
+                <span class="select-all-text">全选</span>
+                <span class="selected-count" v-if="selectedItems.length > 0">
+                  (已选 {{ selectedItems.length }} 件商品)
+                </span>
+              </label>
+            </div>
+            <div class="batch-actions" v-if="selectedItems.length > 0">
+              <button class="btn btn-danger btn-sm" @click="confirmBatchDelete">
+                <i class="fas fa-trash"></i> 删除选中商品
+              </button>
             </div>
           </div>
           <!-- 购物车商品项 -->
@@ -26,7 +37,13 @@
               <input type="checkbox" :value="item.productId" v-model="selectedItems" @change="updateAllSelected">
             </div>
             <div class="cart-item-image">
-              <img :src="item.imageUrl || 'https://img.pngsucai.com/00/87/02/31a2f72e4e901438.webp'" :alt="item.productName">
+              <img 
+                :src="getProductImageUrl(item)" 
+                :alt="item.productName"
+                :data-product-id="item.productId"
+                @error="handleImageError"
+                @load="handleImageLoad"
+              >
             </div>
             <div class="cart-item-info">
             <h3 class="cart-item-name">{{ item.productName }}</h3>
@@ -135,6 +152,9 @@ export default {
       showBuyForm: false,
       buySuccess: false,
       error: '',
+      // 登录状态相关
+      isCustomerLoggedIn: false,
+      customerUsername: '',
       buyer: {
         name: '',
         phone: '',
@@ -144,10 +164,86 @@ export default {
     };
   },
   created() {
-    this.fetchCartItems();
+    // 监听storage事件，以便在其他标签页登录状态变化时同步更新
+    window.addEventListener('storage', this.handleStorageChange);
+    // 初始检查登录状态
+    this.checkLoginStatus();
+    // 检查登录状态后再获取购物车数据
+    this.$nextTick(() => {
+      this.fetchCartItems();
+    });
+  },
+  beforeUnmount() {
+    // 移除storage事件监听
+    window.removeEventListener('storage', this.handleStorageChange);
   },
   methods: {
+    // 检查登录状态
+    checkLoginStatus() {
+      // 检查客户登录状态
+      this.isCustomerLoggedIn = !!localStorage.getItem('customerToken');
+      this.customerUsername = localStorage.getItem('customerUsername') || '';
+    },
+    
+    // 处理storage变化事件
+    handleStorageChange(event) {
+      if (event.key === 'customerToken' || event.key === 'customerUsername') {
+        this.checkLoginStatus();
+        // 登录状态变化时刷新购物车数据
+        this.fetchCartItems();
+      }
+    },
+    
+    // 获取商品图片URL，处理可能的空值或无效URL
+    getProductImageUrl(item) {
+      // 如果没有imageUrl，返回基于商品ID的默认图片
+      if (!item.imageUrl) {
+        return 'https://picsum.photos/seed/product-' + item.productId + '/150/150.jpg';
+      }
+      
+      // 如果URL不以http开头，可能是相对路径，需要处理
+      if (!item.imageUrl.startsWith('http')) {
+        // 这里可以根据实际情况添加基础URL
+        return item.imageUrl;
+      }
+      
+      // 对于花瓣网等可能有防盗链的图片，使用基于商品ID的替代图片
+      if (item.imageUrl.includes('huaban.com')) {
+        console.log('检测到花瓣网图片，使用替代图片:', item.imageUrl);
+        return 'https://picsum.photos/seed/product-' + item.productId + '/150/150.jpg';
+      }
+      
+      return item.imageUrl;
+    },
+    
+    // 处理图片加载失败的情况
+        handleImageError(event) {
+          // 当图片加载失败时，设置基于商品ID的默认图片
+          const productId = event.target.dataset.productId || 'default';
+          const defaultImage = 'https://picsum.photos/seed/product-' + productId + '/150/150.jpg';
+          
+          // 打印错误信息
+          console.error('购物车图片加载失败:', event.target.src);
+          
+          // 避免无限循环，如果当前已经是默认图片且加载失败，不再尝试替换
+          if (event.target.src !== defaultImage) {
+            event.target.src = defaultImage;
+          }
+        },
+    
+    // 处理图片加载成功的情况
+    handleImageLoad(event) {
+      // 图片加载成功
+      console.log('购物车图片加载成功:', event.target.src);
+    },
+    
     async fetchCartItems() {
+      // 如果用户未登录，不获取购物车数据
+      if (!this.isCustomerLoggedIn) {
+        this.loading = false;
+        return;
+      }
+      
       this.loading = true;
       try {
         const username = localStorage.getItem('customerUsername');
@@ -233,28 +329,120 @@ export default {
         }
       } catch (error) {
         console.error('移除商品失败:', error);
-        alert('移除商品失败，请稍后重试。');
+        alert('移除商品失败，请稍后重试');
+      }
+    },
+    
+    // 确认批量删除
+    confirmBatchDelete() {
+      if (this.selectedItems.length === 0) {
+        alert('请先选择要删除的商品');
+        return;
+      }
+      
+      if (confirm(`确定要删除选中的 ${this.selectedItems.length} 件商品吗？`)) {
+        this.batchDelete();
+      }
+    },
+    
+    // 批量删除选中的商品
+    async batchDelete() {
+      if (!this.isCustomerLoggedIn) {
+        this.error = '请先登录';
+        return;
+      }
+      
+      try {
+        const username = localStorage.getItem('customerUsername');
+        const encodedUsername = encodeURIComponent(username || '');
+        
+        // 逐个删除选中的商品
+        let successCount = 0;
+        let failCount = 0;
+        
+        for (const productId of this.selectedItems) {
+          try {
+            const response = await this.$axios.delete(`/cart/remove/${productId}`, {
+              headers: {
+                'X-Username': encodedUsername
+              }
+            });
+            
+            if (response.data.success) {
+              successCount++;
+            } else {
+              failCount++;
+            }
+          } catch (error) {
+            failCount++;
+            console.error(`删除商品 ${productId} 失败:`, error);
+          }
+        }
+        
+        // 刷新购物车数据
+        await this.fetchCartItems();
+        
+        // 清空选中的商品
+        this.selectedItems = [];
+        this.isAllSelected = false;
+        
+        // 显示结果
+        if (failCount === 0) {
+          alert(`成功删除 ${successCount} 件商品`);
+        } else {
+          alert(`操作完成：成功删除 ${successCount} 件商品，失败 ${failCount} 件`);
+        }
+      } catch (error) {
+        console.error('批量删除失败:', error);
+        alert('批量删除失败，请稍后重试');
       }
     },
     
     async clearCart() {
+      if (!this.isCustomerLoggedIn) {
+        this.error = '请先登录';
+        return;
+      }
+      
       if (confirm('确定要清空购物车吗？')) {
         try {
           const username = localStorage.getItem('customerUsername');
           const encodedUsername = encodeURIComponent(username || '');
-          const response = await this.$axios.delete('/cart/clear', {
-            headers: {
-              'X-Username': encodedUsername
-            }
-          });
           
-          if (response.data.success) {
-            this.cartItems = [];
-            this.totalQuantity = 0;
-            this.totalAmount = 0;
+          // 获取当前购物车中的所有商品ID
+          const productIds = this.cartItems.map(item => item.productId);
+          
+          // 逐个删除购物车中的所有商品
+          let successCount = 0;
+          let failCount = 0;
+          
+          for (const productId of productIds) {
+            try {
+              const response = await this.$axios.delete(`/cart/remove/${productId}`, {
+                headers: {
+                  'X-Username': encodedUsername
+                }
+              });
+              
+              if (response.data.success) {
+                successCount++;
+              } else {
+                failCount++;
+              }
+            } catch (error) {
+              failCount++;
+              console.error(`删除商品 ${productId} 失败:`, error);
+            }
+          }
+          
+          // 刷新购物车数据
+          await this.fetchCartItems();
+          
+          // 显示结果
+          if (failCount === 0) {
             alert('购物车已清空');
           } else {
-            alert('清空购物车失败: ' + response.data.message);
+            alert(`操作完成：成功删除 ${successCount} 件商品，失败 ${failCount} 件`);
           }
         } catch (error) {
           console.error('清空购物车失败:', error);
@@ -287,7 +475,7 @@ export default {
       }
       
       // 检查用户是否已登录
-      if (!localStorage.getItem('customerLoggedIn')) {
+      if (!this.isCustomerLoggedIn) {
         this.error = '未登录，跳转至登录界面';
         // 2秒后跳转到登录页面
         setTimeout(() => {
@@ -464,9 +652,42 @@ export default {
 
 .cart-item-header {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 15px 0;
   margin-bottom: 10px;
   font-weight: bold;
+  border-bottom: 1px solid #eee;
+}
+
+.cart-item-checkbox {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+.batch-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-danger {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 4px;
 }
 
 .cart-item {
@@ -480,16 +701,32 @@ export default {
 }
 
 .cart-item-checkbox {
-  flex: 0 0 40px;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
-  justify-content: center;
 }
 
 .cart-item-checkbox input[type="checkbox"] {
   width: 18px;
   height: 18px;
   cursor: pointer;
+  margin-right: 8px;
+}
+
+.select-all-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.select-all-text {
+  margin-right: 5px;
+}
+
+.selected-count {
+  color: #666;
+  font-size: 14px;
 }
 
 .cart-item-image {

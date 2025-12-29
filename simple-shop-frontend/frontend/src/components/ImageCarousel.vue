@@ -52,18 +52,24 @@ export default {
     initialIndex: {
       type: Number,
       default: 0
+    },
+    defaultImageSeed: {
+      type: String,
+      default: 'default'
     }
   },
   data() {
     return {
-      currentIndex: 0,
-      defaultImage: 'https://img.pngsucai.com/00/87/02/31a2f72e4e901438.webp'
+      currentIndex: 0
     }
   },
   computed: {
     currentImage() {
-      if (this.images.length === 0) return this.defaultImage;
-      return this.images[this.currentIndex] || this.defaultImage;
+      if (this.images.length === 0) return this.getDefaultImage();
+      return this.images[this.currentIndex] || this.getDefaultImage();
+    },
+    getDefaultImage() {
+      return 'https://picsum.photos/seed/product-' + this.defaultImageSeed + '/800/800.jpg';
     }
   },
   watch: {
@@ -99,7 +105,11 @@ export default {
       this.$emit('close');
     },
     handleImageError(e) {
-      e.target.src = this.defaultImage;
+      // 避免无限循环，如果当前已经是默认图片且加载失败，不再尝试替换
+      const defaultImage = this.getDefaultImage();
+      if (e.target.src !== defaultImage) {
+        e.target.src = defaultImage;
+      }
     },
     addKeydownListener() {
       document.addEventListener('keydown', this.handleKeydown);

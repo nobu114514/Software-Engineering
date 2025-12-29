@@ -91,14 +91,16 @@
           
           <!-- 图片链接到详情页 -->
           <router-link :to="{ name: 'productDetail', params: { id: product.id } }" class="product-image" :class="{ 'disabled-link': !canBuy }">
-            <!-- 显示商品图片，如果没有图片则显示默认图片 -->
-            <img
-              :src="product.imageUrl || 'https://img.pngsucai.com/00/87/02/31a2f72e4e901438.webp'"
-              :alt="product.name || '商品图片'"
-              class="product-img clickable"
-              @error="handleImageError"
-            >
-          </router-link>
+          <!-- 显示商品图片，如果没有图片则显示默认图片 -->
+          <img
+            :src="getProductImageUrl(product)"
+            :alt="product.name || '商品图片'"
+            :data-product-id="product.id"
+            class="product-img clickable"
+            @error="handleImageError"
+            @load="handleImageLoad"
+          >
+        </router-link>
           
           <div class="product-price">价格: ¥{{ product.price.toFixed(2) }}</div>
           <div class="product-stock" v-if="product.stock > 0">库存: {{ product.stock }} 件</div>
@@ -339,12 +341,52 @@ export default {
           url = 'http://localhost:8081/api/products/active-list';
         }
         
+        // 添加排序参数
+        url += `?sort=${this.sortBy},${this.sortDirection}`;
+        
         const response = await axios.get(url);
         
         // 处理响应 - 后端返回的是简单的列表
         const data = response.data.data || response.data;
-        const productsArray = Array.isArray(data) ? data : [data].filter(Boolean);
+        let productsArray = Array.isArray(data) ? data : [data].filter(Boolean);
+        
+        // 如果后端不支持排序参数，我们在前端进行排序
+        if (!response.data.data) {
+          productsArray.sort((a, b) => {
+            let valueA, valueB;
+            
+            switch (this.sortBy) {
+              case 'price':
+                valueA = parseFloat(a.price) || 0;
+                valueB = parseFloat(b.price) || 0;
+                break;
+              case 'salesCount':
+                valueA = parseInt(a.salesCount) || 0;
+                valueB = parseInt(b.salesCount) || 0;
+                break;
+              case 'createdAt':
+              default:
+                valueA = new Date(a.createdAt || 0);
+                valueB = new Date(b.createdAt || 0);
+                break;
+            }
+            
+            if (this.sortDirection === 'asc') {
+              return valueA > valueB ? 1 : -1;
+            } else {
+              return valueA < valueB ? 1 : -1;
+            }
+          });
+        }
+        
         this.products = productsArray;
+        
+        // 调试：打印商品数据，检查imageUrl字段
+        console.log('商品数据:', this.products);
+        this.products.forEach((product, index) => {
+          console.log(`商品 ${index + 1} - imageUrl:`, product.imageUrl);
+        });
+        
         this.totalPages = 1;
         this.totalElements = productsArray.length;
         this.currentPage = 0;
@@ -359,8 +401,44 @@ export default {
       }
     },
     handleImageError(event) {
-      // 当图片加载失败时，设置默认图片
-      event.target.src = 'https://img.pngsucai.com/00/87/02/31a2f72e4e901438.webp';
+          // 当图片加载失败时，设置基于商品ID的默认图片
+          const productId = event.target.dataset.productId || 'default';
+          const defaultImage = 'https://picsum.photos/seed/product-' + productId + '/300/300.jpg';
+          
+          // 打印错误信息
+          console.error('图片加载失败:', event.target.src);
+          
+          // 避免无限循环，如果当前已经是默认图片且加载失败，不再尝试替换
+          if (event.target.src !== defaultImage) {
+            event.target.src = defaultImage;
+          }
+        },
+    
+    handleImageLoad(event) {
+      // 图片加载成功
+      console.log('图片加载成功:', event.target.src);
+    },
+    
+    // 获取商品图片URL，处理可能的空值或无效URL
+    getProductImageUrl(product) {
+      // 如果没有imageUrl，返回基于商品ID的默认图片
+      if (!product.imageUrl) {
+        return 'https://picsum.photos/seed/product-' + product.id + '/300/300.jpg';
+      }
+      
+      // 如果URL不以http开头，可能是相对路径，需要处理
+      if (!product.imageUrl.startsWith('http')) {
+        // 这里可以根据实际情况添加基础URL
+        return product.imageUrl;
+      }
+      
+      // 对于花瓣网等可能有防盗链的图片，使用基于商品ID的替代图片
+      if (product.imageUrl.includes('huaban.com')) {
+        console.log('检测到花瓣网图片，使用替代图片:', product.imageUrl);
+        return 'https://picsum.photos/seed/product-' + product.id + '/300/300.jpg';
+      }
+      
+      return product.imageUrl;
     },
     handleBuyClick(product) {
       this.currentProduct = product;
